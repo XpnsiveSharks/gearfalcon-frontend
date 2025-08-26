@@ -30,6 +30,8 @@ npm  install
 - Would you like to use Turbopack? (recommended) -> Yes
 - Would you like to customize the import alias (`@/*` by default)? -> No
 
+
+## cheat sheet for React
 ### rule of thumb:
 - if logic is only for one component, keep it there.
 - if logic is reused or complex, move it into a hook.
