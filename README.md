@@ -41,6 +41,6 @@ Types of hooks
 - Testability – you can mock services in tests without touching UI.
 
 ### shortcuts
-rafce → React Arrow Function Component Export
-rafcp → React Arrow Function Component with PropTypes
-rafc → React Arrow Function Component
+- rafce → React Arrow Function Component Export
+- rafcp → React Arrow Function Component with PropTypes
+- rafc → React Arrow Function Component
