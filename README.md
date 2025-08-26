@@ -11,6 +11,15 @@ pnpm dev
 # or
 bun dev
 ```
+## Required installation
+- install node modules in your working directory after cloning
+```bash
+npm  install
+```
+## .env setup 
+- add .env.local file in your root directory
+- copy all samples in .env.example and paste in your .env.local
+- modify URL that matches the URL of your API in your local machine
 
 ## Installation setup for this project
 - Would you like to use TypeScript? -> Yes
