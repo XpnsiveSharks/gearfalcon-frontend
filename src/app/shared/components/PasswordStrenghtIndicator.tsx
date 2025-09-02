@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-
+import { useState } from "react";
 import PasswordStrengthIndicator from "@/app/shared/components/PasswordStrenghtIndicator";
 
-
-export default function CustomerRegisterPage() {
+export default function AdminRegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!password) {
@@ -17,12 +15,15 @@ const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
       return;
     }
 
-    console.log("Customer account created:", { email, password });
+    // 🚀 Here you should check if password passes validation
+    // You can extend PasswordStrengthIndicator to expose `isValid` if needed.
+    // For now, just block empty passwords:
+    console.log("Admin account created:", { email, password });
   };
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold mb-4">Create Customer Account</h1>
+      <h1 className="text-2xl font-bold mb-4">Create Admin Account</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email */}
         <div>
@@ -42,15 +43,15 @@ const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
           password={password}
           onPasswordChange={setPassword}
           required
-          userType="customer"
+          userType="admin"
         />
 
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
         >
-          Create Customer Account
+          Create Admin Account
         </button>
       </form>
     </div>
