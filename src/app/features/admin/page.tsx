@@ -18,7 +18,7 @@ export default function AdminRegisterPage() {
     // 🚀 Here you should check if password passes validation
     // You can extend PasswordStrengthIndicator to expose `isValid` if needed.
     // For now, just block empty passwords:
-    console.log("Admin account created:", { email, password });
+    // TODO: wire submission to API; avoid logging sensitive data.
   };
 
   return (

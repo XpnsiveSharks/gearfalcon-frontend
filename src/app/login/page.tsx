@@ -1,62 +1,39 @@
-/*
-*************************** LoginPage Component Overview ***************************
-1. Reusable login form
-	- LoginPage renders a reusable login form with email and password fields.
-	- You can place it on any route that requires user authentication.
-	- Uses local state (useState) to manage form inputs and UI states like showPassword.
-2. Handles login logic
-	- Integrates with the useLogin hook to call the backend login API.
-	- Updates the access token in memory using the AuthProvider context.
-	- Displays loading state (isLoading) while the request is in progress.
-	- Shows error messages if login fails.
-3. Automatic navigation on success
-	- On successful login, it redirects the user to /features using Next.js useRouter.
-	- No need to manually handle redirect logic in multiple components.
-*/
-
-"use client"; 
-// This Next.js directive ensures the component is rendered on the client side
+"use client";
 
 import React, { useState } from "react";
-import PrimaryButton from "../shared/components/PrimaryButton"; 
-// Custom button component with loading state
-import { useLogin } from "./hooks/useLogin"; 
-// Custom hook to handle login logic (calls API, updates access token)
-import { useRouter } from "next/navigation"; 
-// Next.js router for client-side navigation
+import PrimaryButton from "../shared/components/PrimaryButton";
+import { useLogin } from "./hooks/useLogin";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react"; // ✅ import from lucide-react
 
 const LoginPage = () => {
-  // Local state for form inputs
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
-  const router = useRouter(); // Next.js router
-
-  // Get login handler and status from custom hook
+  const router = useRouter();
   const { handleLogin, isLoading, error } = useLogin();
 
-  // Form submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // prevent page reload
-    const ok = await handleLogin(email, password); // call login API
+    e.preventDefault();
+    const ok = await handleLogin(email, password);
     if (ok) {
-      router.replace("/features"); // redirect to features page on success
+      router.replace("/features");
     }
   };
- 
+
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-100 pt-24 px-4">
       <div className="mx-auto max-w-md">
         <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6 sm:p-8">
-          <h1 className="text-slate-900 text-2xl font-semibold">
-            Welcome back
-          </h1>
+          <h1 className="text-slate-900 text-2xl font-semibold">Welcome back</h1>
           <p className="text-slate-600 mt-1 text-sm">
             Please sign in to continue.
           </p>
 
           <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
+            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -81,6 +58,7 @@ const LoginPage = () => {
               </p>
             </div>
 
+            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -107,40 +85,9 @@ const LoginPage = () => {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 15.338 6.244 18 12 18c1.658 0 3.11-.262 4.35-.72M6.228 6.228A10.45 10.45 0 0112 6c5.756 0 8.774 2.662 10.066 6-.37.98-.913 1.877-1.6 2.646M3 3l18 18"
-                      />
-                    </svg>
+                    <EyeOff className="w-5 h-5" /> // ✅ lucide icon
                   ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-5 h-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 5 12 5c4.638 0 8.573 2.507 9.963 6.683.07.207.07.429 0 .636C20.573 16.49 16.64 19 12 19c-4.638 0-8.573-2.507-9.963-6.678z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
+                    <Eye className="w-5 h-5" /> // ✅ lucide icon
                   )}
                 </button>
               </div>
@@ -158,6 +105,7 @@ const LoginPage = () => {
               </div>
             </div>
 
+            {/* Error */}
             {error && (
               <div
                 role="alert"
@@ -167,16 +115,18 @@ const LoginPage = () => {
               </div>
             )}
 
+            {/* Submit */}
             <PrimaryButton type="submit" isLoading={isLoading} fullWidth>
               Sign in
             </PrimaryButton>
           </form>
 
+          {/* ✅ Use Next.js Link for Register page */}
           <p className="mt-6 text-center text-sm text-slate-600">
             Don&apos;t have an account?{" "}
-            <a href="#" className="text-slate-900 hover:underline">
+            <Link href="/register" className="text-slate-900 hover:underline">
               Create one
-            </a>
+            </Link>
           </p>
         </div>
       </div>
@@ -185,11 +135,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-/* 
-*************************** How to use this component: ***************************
-1. Place it in a Next.js page, e.g. `app/login/page.tsx`.
-2. It renders a login form with email and password fields.
-3. It uses `useLogin` hook to handle API call and store access token in context.
-4. On successful login, it redirects to `/features`.
-*/
