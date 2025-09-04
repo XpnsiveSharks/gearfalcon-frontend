@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   validatePasswordStrength, 
-  generateSecurePassword, 
   PasswordStrength,
   PasswordRequirements,
   UserType

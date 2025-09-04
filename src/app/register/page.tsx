@@ -63,7 +63,7 @@ const RegisterPage = () => {
               password={password}
               onPasswordChange={setPassword}
               required
-              userType="customer" // or "admin"
+              userType="customer"
               showGenerator
               showRequirements
             />
