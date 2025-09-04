@@ -244,10 +244,17 @@ export interface TypeGuards {
 }
 
 // Re-export common React types for convenience
-export type FC<P = {}> = React.FunctionComponent<P>;
-export type FormEvent = React.FormEvent<HTMLFormElement>;
-export type ChangeEvent = React.ChangeEvent<HTMLInputElement>;
-export type MouseEvent = React.MouseEvent<HTMLButtonElement>;
+import type {
+  FunctionComponent,
+  FormEvent as ReactFormEvent,
+  ChangeEvent as ReactChangeEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
+export type FC<P = {}> = FunctionComponent<P>;
+export type FormEvent = ReactFormEvent<HTMLFormElement>;
+export type ChangeEvent = ReactChangeEvent<HTMLInputElement>;
+export type MouseEvent = ReactMouseEvent<HTMLButtonElement>;
+
 
 // Branded types for additional type safety
 export type SecurePassword = string & { readonly __brand: 'SecurePassword' };

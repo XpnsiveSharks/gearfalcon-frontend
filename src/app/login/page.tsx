@@ -15,13 +15,15 @@ const LoginPage = () => {
   const router = useRouter();
   const { handleLogin, isLoading, error } = useLogin();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const ok = await handleLogin(email, password);
-    if (ok) {
-      router.replace("/features");
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      try {
+        const ok = await handleLogin(email, password);
+        if (ok) router.replace("/features");
+      } catch {
+        // error state is set inside useLogin; no-op here
     }
-  };
+ };
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-100 pt-24 px-4">
@@ -85,9 +87,9 @@ const LoginPage = () => {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5" /> // ✅ lucide icon
+                    <EyeOff className="w-5 h-5" /> 
                   ) : (
-                    <Eye className="w-5 h-5" /> // ✅ lucide icon
+                    <Eye className="w-5 h-5" />
                   )}
                 </button>
               </div>
