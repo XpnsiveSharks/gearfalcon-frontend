@@ -153,23 +153,19 @@ export const PASSWORD_CONFIGS: Record<UserType, PasswordRequirements> = {
 export function generateSecurePassword(length: number = 12): string {
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lowercase = "abcdefghijklmnopqrstuvwxyz";
-  const numbers = "0123456789";
-  const symbols = "!@#$%^&*()_+[]{}|;:,.<>?";
-  const allChars = uppercase + lowercase + numbers + symbols;
+  const allChars = uppercase + lowercase;
 
   let password = "";
 
-  // Ensure at least 2 uppercase
-  for (let i = 0; i < 2; i++) {
-    password += uppercase[Math.floor(Math.random() * uppercase.length)];
-  }
+  // Ensure at least 1 uppercase
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
 
-  // Fill the rest
+  // Fill the rest with random chars
   for (let i = password.length; i < length; i++) {
     password += allChars[Math.floor(Math.random() * allChars.length)];
   }
 
-  // Shuffle so the 2 uppercase aren’t always first
+  // Shuffle so uppercase isn’t always first
   return password
     .split("")
     .sort(() => Math.random() - 0.5)
