@@ -4,15 +4,9 @@ import {
   PasswordRequirements, 
   ValidationResult,
   PasswordStrength,
+  UserType,
   PASSWORD_CONFIGS
 } from '../lib/validators/passwordValidator';
-
-import {
-  ValidationRequirement,
-} from '../../shared/types/password.types';
-
-// Import UserType from the shared types file (adjust path as needed)
-import { UserType } from '../../shared/types/password.types'; // Adjust this path to match your project structure
 
 export interface PasswordValidationState {
   validation: ValidationResult | null;

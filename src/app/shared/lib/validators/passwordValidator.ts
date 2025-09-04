@@ -3,9 +3,6 @@
  * Used by both Admin and Customer registration/password change
  */
 
-// Import the shared UserType (adjust the import path as needed)
-import type { UserType } from '../../types/password.types'; // Adjust path to your shared types
-
 export interface PasswordRequirements {
   minLength: number;
   maxLength: number;
@@ -242,37 +239,24 @@ export function generateSecurePassword(): string {
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lowercase = 'abcdefghijklmnopqrstuvwxyz';
   const numbers = '0123456789';
-  const special = '!@#$%^&*()_-=[]{}|;:,.<>?';
-
-  const cryptoObj = getWebCrypto();
-  if (!cryptoObj) {
-    // As a last resort, fall back with a clear warning. Prefer environments with Web Crypto.
-    // eslint-disable-next-line no-console
-    console.warn('Web Crypto API unavailable; falling back to non-crypto RNG for password suggestion.');
-  }
-
-  const pick = (pool: string) =>
-    pool[cryptoObj ? secureRandomInt(pool.length, cryptoObj) : Math.floor(Math.random() * pool.length)];
-
-  const chars: string[] = [];
-  // Ensure at least one from each class
-  chars.push(pick(uppercase), pick(lowercase), pick(numbers), pick(special));
-
-  // Fixed: Added '+' operators for string concatenation
+  const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  
+  let password = '';
+  
+  // Ensure at least one character from each required set
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  // Fill remaining length with random characters
   const allChars = uppercase + lowercase + numbers + special;
-  while (chars.length < 12) chars.push(pick(allChars));
-
-  // Fisher–Yates
-  if (cryptoObj) {
-    secureShuffle(chars, cryptoObj);
-  } else {
-    for (let i = chars.length - 1; i > 0; i--) {
-      // Fixed: Added '+' operator
-      const j = Math.floor(Math.random() * (i + 1));
-      [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
+  for (let i = 4; i < 12; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
   }
-  return chars.join('');
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
 // Admin-specific password requirements
@@ -290,9 +274,8 @@ export const CUSTOMER_PASSWORD_REQUIREMENTS: PasswordRequirements = {
 
 /**
  * Predefined validation configs for different user types
- * This will ensure type safety - adding a new UserType will require adding a config here
  */
-export const PASSWORD_CONFIGS: Record<UserType, PasswordRequirements> = {
+export const PASSWORD_CONFIGS = {
   customer: CUSTOMER_PASSWORD_REQUIREMENTS,
   admin: ADMIN_PASSWORD_REQUIREMENTS,
   technician: ADMIN_PASSWORD_REQUIREMENTS,
@@ -300,37 +283,4 @@ export const PASSWORD_CONFIGS: Record<UserType, PasswordRequirements> = {
   manager: ADMIN_PASSWORD_REQUIREMENTS
 } as const;
 
-// Helpers for CSPRNG and unbiased shuffling
-function getWebCrypto(): Crypto | undefined {
-  // Browser
-  // @ts-ignore - Crypto is available in DOM lib
-  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) return globalThis.crypto as Crypto;
-  // Node.js fallback
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { webcrypto } = require('node:crypto');
-    return webcrypto as Crypto;
-  } catch {
-    return undefined;
-  }
-}
-
-function secureRandomInt(maxExclusive: number, cryptoObj: Crypto): number {
-  if (maxExclusive <= 0) throw new Error('maxExclusive must be > 0');
-  const maxUint32 = 0xffffffff;
-  const limit = Math.floor((maxUint32 + 1) / maxExclusive) * maxExclusive;
-  const buf = new Uint32Array(1);
-  let x = 0;
-  do {
-    cryptoObj.getRandomValues(buf);
-    x = buf[0];
-  } while (x >= limit);
-  return x % maxExclusive;
-}
-
-function secureShuffle<T>(arr: T[], cryptoObj: Crypto): void {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = secureRandomInt(i + 1, cryptoObj);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
+export type UserType = keyof typeof PASSWORD_CONFIGS;
