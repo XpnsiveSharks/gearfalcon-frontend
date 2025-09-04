@@ -15,44 +15,16 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   // mock register handler (replace with API call later)
-const handleRegister = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (password !== confirmPassword) {
-    alert("Passwords do not match");
-    return;
-  }
-
-  try {
-    const res = await fetch("http://gearfalcon.test/user/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const text = await res.text();
-    console.log("Raw response:", text);
-
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = null;
-    }
-
-    if (!res.ok) {
-      alert(data.message || "Failed to register");
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
       return;
     }
-
-    alert("Registration successful!");
+    // TODO: call backend API (admin or customer registration)
+    console.log("Registering user:", { email, password });
     router.push("/login");
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong");
-  }
-};
-
-
+  };
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-100 pt-24 px-4">
