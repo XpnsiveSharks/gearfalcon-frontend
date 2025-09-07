@@ -42,7 +42,7 @@ const COMMON_PASSWORDS = ['password', '123456', '12345678', 'qwerty', 'abc123'];
 
 // Regex
 const REGEX_PATTERNS = {
-  uppercase2: /(?:.*[A-Z]){2,}/, // at least 2 uppercase letters
+  uppercase: /[A-Z]/, // at least 1 uppercase letter
   lowercase: /[a-z]/,
 };
 
@@ -70,12 +70,12 @@ export function validatePasswordStrength(
   }
 
   // Check uppercase (2 minimum)
-  if (config.requireUppercase && !REGEX_PATTERNS.uppercase2.test(password)) {
-    feedback.push('Password must contain at least 2 uppercase letters (A-Z)');
-    isValid = false;
-  } else if (REGEX_PATTERNS.uppercase2.test(password)) {
-    score += 30;
-  }
+  if (config.requireUppercase && !REGEX_PATTERNS.uppercase.test(password)) {
+  feedback.push('Password must contain at least 1 uppercase letter (A-Z)');
+  isValid = false;
+} else if (REGEX_PATTERNS.uppercase.test(password)) {
+  score += 30;
+}
 
   // Check lowercase
   if (config.requireLowercase && !REGEX_PATTERNS.lowercase.test(password)) {
@@ -121,9 +121,9 @@ function getRequirementsList(password: string, config: PasswordRequirements): Va
       required: true
     },
     {
-      id: 'uppercase2',
-      label: 'At least 2 uppercase letters (A-Z)',
-      met: /(?:.*[A-Z]){2,}/.test(password),
+      id: 'uppercase',
+      label: 'At least 1 uppercase letter (A-Z)',
+      met: /[A-Z]/.test(password),
       required: config.requireUppercase
     },
     {
@@ -149,6 +149,7 @@ export const PASSWORD_CONFIGS: Record<UserType, PasswordRequirements> = {
 };
 
 // lib/validators/passwordValidator.ts
+
 
 export function generateSecurePassword(length: number = 12): string {
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
