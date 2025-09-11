@@ -16,14 +16,27 @@ const RegisterPage = () => {
 
   // mock register handler (replace with API call later)
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
+  e.preventDefault();
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+  try {
+    const res = await fetch("/users/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      alert("Registration successful! Please check your email to verify your account.");
+      router.push("/login");
+    } else {
+      const error = await res.json();
+      alert(error.message || "Registration failed");
     }
-    // TODO: call backend API (admin or customer registration)
-    console.log("Registering user:", { email, password });
-    router.push("/login");
+  } catch (err) {
+    alert("Network error");
+  }
   };
 
   return (
