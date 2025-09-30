@@ -50,10 +50,10 @@ export function useLogin() {
 
 		try {
 			// Call the AuthService login API
-			const { access_token } = await AuthService.login(email, password);
+			const { token } = await AuthService.login(email, password);
 
 			// Store the access token in AuthContext
-			setAccessToken(access_token);
+			setAccessToken(token);
 
 			// Return success
 			return true;
