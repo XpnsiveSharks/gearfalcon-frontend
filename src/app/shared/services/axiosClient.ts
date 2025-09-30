@@ -29,10 +29,10 @@ Usage summary:
 // src/app/shared/services/axiosClient.ts
 import axios, { AxiosError, AxiosInstance } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
-import { AuthService } from "@/app/shared/services/AuthService";
+// import { AuthService } from "@/app/shared/services/AuthService"; // Removed - no refresh endpoint
 
 // Base API URL from environment variable
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // ----------------------
 // Token bridge mechanism
@@ -58,34 +58,11 @@ export const http: AxiosInstance = axios.create({
   withCredentials: true, // include cookies for refresh token
 });
 
-// Separate instance for token refresh to avoid recursion through interceptors
-const refreshHttp = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true,
-});
+// Removed refreshHttp instance - no refresh endpoint in backend
 
 // ----------------------
-// Token refresh queue
+// Token refresh queue - REMOVED (no refresh endpoint in backend)
 // ----------------------
-let isRefreshing = false; // Flag to prevent multiple simultaneous refresh calls
-let pendingQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
-
-// Process queued requests after token refresh completes
-function processQueue(error: unknown, token: string | null) {
-  pendingQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error); // Reject all queued requests if refresh failed
-    } else if (token) {
-      resolve(token); // Resolve with new token
-    } else {
-      reject(new Error("No token available"));
-    }
-  });
-  pendingQueue = []; // Clear queue
-}
 
 // ----------------------
 // Request interceptor
@@ -105,62 +82,18 @@ http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 // ----------------------
-// Response interceptor
+// Response interceptor - SIMPLIFIED (no refresh functionality)
 // ----------------------
 http.interceptors.response.use(
   (response) => response, // Pass successful responses
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-
-    // Only handle 401 errors, skip if already retried
-    if (error.response?.status !== 401 || originalRequest._retry) {
-      return Promise.reject(error);
-    }
-
-    originalRequest._retry = true; // mark to avoid infinite retry loops
-
-    if (isRefreshing) {
-      // If a refresh is already in progress, queue this request
-      return new Promise((resolve, reject) => {
-        pendingQueue.push({
-          resolve: (newToken: string) => {
-            const headers: any = originalRequest.headers as any;
-            if (typeof headers.set === "function") {
-              headers.set("Authorization", `Bearer ${newToken}`);
-            } else {
-              headers["Authorization"] = `Bearer ${newToken}`;
-            }
-            resolve(http(originalRequest)); // Retry original request
-          },
-          reject,
-        });
-      });
-    }
-
-    isRefreshing = true;
-
-    try {
-      // Call backend refresh endpoint; refresh token is sent via HTTP-only cookie
-      const { access_token } = await AuthService.refresh();
-
-      setAccessToken(access_token); // Update in-memory token
-      processQueue(null, access_token); // Retry all queued requests
-
-      // Retry original request with new token
-      const headers: any = originalRequest.headers as any;
-      if (typeof headers.set === "function") {
-        headers.set("Authorization", `Bearer ${access_token}`);
-      } else {
-        headers["Authorization"] = `Bearer ${access_token}`;
-      }
-      return http(originalRequest);
-    } catch (refreshErr) {
-      processQueue(refreshErr, null); // Reject queued requests
+    // Handle 401 errors by clearing token and redirecting to login
+    if (error.response?.status === 401) {
       setAccessToken(null); // Clear token in memory, effectively logging out
-      return Promise.reject(refreshErr);
-    } finally {
-      isRefreshing = false;
+      // You might want to redirect to login page here
+      // window.location.href = '/login';
     }
+    return Promise.reject(error);
   }
 );
 

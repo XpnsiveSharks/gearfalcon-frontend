@@ -10,8 +10,16 @@ import axios from "axios";
 
 // Type definitions for API responses
 export type LoginResponse = {
-  access_token: string;
-  refresh_token: string;
+  success: boolean;
+  token: string;
+  expires_in: number;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    is_verified: boolean;
+  };
 };
 
 export type RegisterResponse = {
@@ -45,7 +53,7 @@ export type RegisterRequest = {
   role?: string;
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://gearfalcon.test";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // Create an Axios instance for all auth-related requests
 const authHttp = axios.create({
@@ -62,9 +70,15 @@ authHttp.interceptors.response.use(
   (error) => {
     // Log error for debugging
     console.error('Auth API Error:', {
+      message: error.message,
       status: error.response?.status,
+      statusText: error.response?.statusText,
       data: error.response?.data,
       url: error.config?.url,
+      baseURL: error.config?.baseURL,
+      method: error.config?.method,
+      timeout: error.code === 'ECONNABORTED' ? 'Request timeout' : null,
+      network: error.code === 'ERR_NETWORK' ? 'Network error - check if backend is running' : null,
     });
     
     return Promise.reject(error);
@@ -75,18 +89,13 @@ authHttp.interceptors.response.use(
 export const AuthService = {
   // Login function
   async login(email: string, password: string): Promise<LoginResponse> {
-    const { data } = await authHttp.post<LoginResponse>("/api/auth/login", { 
+    const { data } = await authHttp.post<LoginResponse>("/auth/login", { 
       email, 
       password 
     });
     return data;
   },
 
-  // Token refresh function
-  async refresh(): Promise<{ access_token: string }> {
-    const { data } = await authHttp.post<{ access_token: string }>("/api/auth/refresh", {});
-    return data;
-  },
 
   // Registration function
   async register(userData: RegisterRequest): Promise<RegisterResponse> {
