@@ -31,6 +31,8 @@ import { AuthService } from "../../shared/services/AuthService";
 
 import { useAuth } from "../../shared/hooks/useAuth"; 
 // Custom hook that provides access to AuthContext (like setAccessToken)
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 // Custom hook to handle login logic
 export function useLogin() {
@@ -42,6 +44,7 @@ export function useLogin() {
 
 	// Get setter for access token from AuthContext
 	const { setAccessToken } = useAuth();
+	const router = useRouter();
 
 	// Function to handle login with email and password
 	const handleLogin = async (email: string, password: string) => {
@@ -57,11 +60,16 @@ export function useLogin() {
 
 			// Return success
 			return true;
-		} catch (err) {
-			// Set error state if login fails
-			setError("Invalid credentials");
+		} catch (err: any) {
+			// If backend indicates unverified (403), redirect to verify email page
+			if (axios.isAxiosError(err) && err.response?.status === 403) {
+				setError("Please verify your email. We sent you a new code.");
+				router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+				return false;
+			}
 
-			// Re-throw error for additional handling if needed
+			// Set error state if login fails for other reasons
+			setError("Invalid credentials");
 			throw err;
 		} finally {
 			// Stop loading regardless of success or failure
