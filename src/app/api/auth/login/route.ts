@@ -24,7 +24,7 @@ interface LoginApiResponse {
  * Handles user login and sets HTTP-only cookies for tokens.
  *
  * Security features:
- * - Validates login credentials with backend
+ * - Validates login credentials with backend (localhost:8080/auth/login)
  * - Sets access token as HTTP-only cookie (server-side accessible)
  * - Sets refresh token as HTTP-only cookie (server-side only)
  * - Returns user data WITHOUT exposing tokens to client (maximum security)
@@ -45,13 +45,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
       );
     }
 
-    // Call backend login API
+    // Call backend login API (localhost:8080/auth/login)
     console.log('🔐 Attempting login for:', email);
     console.log('🔗 Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
 
     const loginResponse: LoginResponse = await AuthService.login(email, password);
     console.log('✅ Backend login successful');
-    console.log('🔍 Login response:', JSON.stringify(loginResponse, null, 2));
 
     // Create response with user data (NO token exposure!)
     const response = NextResponse.json({
@@ -63,31 +62,44 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
         role: loginResponse.user.role,
         is_verified: Boolean(loginResponse.user.is_verified), // Convert 1/0 to boolean
       }
-      // ⚠️ CRITICAL: NO access_token in response body for security!
+      // ⚠️ CRITICAL: NO tokens in response body for security!
     });
 
-    // Forward HTTP-only cookies from backend response to client
-    // This is essential for maintaining authentication state
-    if (loginResponse._headers && loginResponse._headers['set-cookie']) {
-      console.log('🔧 Setting HTTP-only cookies from backend');
-      console.log('🔧 Cookie details:', loginResponse._headers['set-cookie']);
-      loginResponse._headers['set-cookie'].forEach((cookie: string) => {
-        console.log('🔧 Setting cookie:', cookie.substring(0, 100) + '...');
-
-        response.headers.append('set-cookie', cookie);
+    // Set access token as HTTP-only cookie
+    if (loginResponse.access_token) {
+      console.log('🍪 Setting access_token cookie');
+      
+      response.cookies.set('access_token', loginResponse.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: loginResponse.expires_in || 900, // Use backend expiry
+        path: '/',
       });
+      
+      console.log(`✅ Access token cookie set (expires in ${loginResponse.expires_in}s)`);
     } else {
-      console.log('⚠️ No cookies received from backend');
-      console.log('🔍 Available headers:', Object.keys(loginResponse._headers || {}));
-      if (loginResponse._headers) {
-        console.log('🔍 All headers:', loginResponse._headers);
-      }
+      console.error('❌ No access_token in backend response');
     }
 
-    // Set refresh token as HTTP-only cookie (server-side only)
-    // Note: This would need to be set by the backend in a real implementation
-    // For now, we'll rely on the existing refresh token mechanism
+    // Set refresh token as HTTP-only cookie
+    if (loginResponse.refresh_token) {
+      console.log('🍪 Setting refresh_token cookie');
+      
+      response.cookies.set('refresh_token', loginResponse.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict', // Stricter for refresh token
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        path: '/',
+      });
+      
+      console.log('✅ Refresh token cookie set (7 days)');
+    } else {
+      console.warn('⚠️ No refresh_token in backend response');
+    }
 
+    console.log('✅ Login completed successfully');
     return response;
 
   } catch (error: any) {

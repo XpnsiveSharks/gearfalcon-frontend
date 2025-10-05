@@ -1,61 +1,40 @@
 /*
  *************************** Secure HTTP-Only Cookie axiosClient ***************************
- 1. Reusable Axios instance with HTTP-only cookie support
-     - `http` is an Axios instance for all API calls
-     - Automatically applies:
-       - baseURL (API root)
-       - withCredentials: true (sends HTTP-only cookies automatically)
-       - Request timeout and retry configuration
-   2. Secure authentication via HTTP-only cookies
-     - No token injection or storage in client-side memory
-     - Cookies are sent automatically by browser
-     - Maximum security against XSS attacks
-   3. Simplified error handling
-     - Handles 401 errors appropriately
-     - Enhanced logging in development mode
-     - Better error context and debugging
-   4. Secure and centralized
-     - No token management in client-side JavaScript
-     - Authentication handled entirely server-side
-     - Makes API calls consistent and secure
-   Usage summary:
-     - Use `http` for all API requests.
-     - HTTP-only cookies are sent automatically.
-     - No token handling needed in client code.
-     - Server-side authentication via /api/auth/* endpoints.
+ 1. Docker-aware configuration for server-side and client-side requests
+ 2. Secure authentication via HTTP-only cookies
+ 3. Automatic service discovery for Docker containers
  */
 
-
-// src/app/_shared/services/axiosClient.ts
 import axios, { AxiosError, AxiosInstance } from "axios";
 import type { InternalAxiosRequestConfig } from "axios";
 
-// Base API URL from environment variable with Docker support
+// Smart URL resolution for Docker and local development
 const getBaseURL = (): string => {
-  const configuredURL = process.env.NEXT_PUBLIC_API_URL || "";
-
-  // In Docker development environment, use host machine instead of service name
-  if (process.env.NODE_ENV === 'development' && configuredURL.includes('backend')) {
-    console.log('🔧 Docker environment detected, using host.docker.internal:8080');
-    return 'http://host.docker.internal:8080'; // Use host machine where backend is accessible
+  const isServer = typeof window === 'undefined';
+  
+  if (isServer) {
+    // SERVER-SIDE (Next.js API routes in Docker container)
+    // Use Docker service name for container-to-container communication
+    const serverURL = process.env.BACKEND_URL || 'http://backend:80';
+    console.log('🐳 Server-side request detected, using:', serverURL);
+    return serverURL;
+  } else {
+    // CLIENT-SIDE (Browser)
+    // Use localhost for browser requests
+    const clientURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    console.log('🌐 Client-side request detected, using:', clientURL);
+    return clientURL;
   }
-
-  // Fallback to host machine if no URL configured
-  if (!configuredURL) {
-    console.warn('⚠️ NEXT_PUBLIC_API_URL not set, using host.docker.internal:8080 as fallback');
-    return 'http://host.docker.internal:8080';
-  }
-
-  return configuredURL;
 };
-
 
 const BASE_URL = getBaseURL();
 
 // Debug logging for environment variables
 if (process.env.NODE_ENV === 'development') {
   console.log('🔧 Axios Client Configuration:', {
-    originalURL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET',
+    isServer: typeof window === 'undefined',
+    BACKEND_URL: process.env.BACKEND_URL || 'NOT SET',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET',
     resolvedURL: BASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     withCredentials: true,
@@ -71,24 +50,16 @@ const AXIOS_CONFIG = {
     'Content-Type': 'application/json',
     'X-Client-Version': process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0',
   },
-  // Ensure cookies are handled properly in server-side context
   maxRedirects: 5,
   validateStatus: function (status: number) {
-    return status >= 200 && status < 300; // Default
+    return status >= 200 && status < 300;
   },
-  // Ensure we can access response headers including set-cookie
   transitional: {
     silentJSONParsing: true,
     forcedJSONParsing: true,
     clarifyTimeoutError: false,
   },
 };
-
-// ----------------------
-// HTTP-Only Cookie Configuration
-// ----------------------
-// No token bridge needed - cookies are sent automatically by browser
-// Authentication is handled entirely server-side via HTTP-only cookies
 
 // ----------------------
 // Enhanced Axios instances
@@ -102,11 +73,6 @@ const refreshHttp = axios.create({
 });
 
 // ----------------------
-// HTTP-Only Cookie Configuration
-// ----------------------
-// No token refresh queue needed - server handles authentication via cookies
-
-// ----------------------
 // Simplified Request interceptor
 // ----------------------
 http.interceptors.request.use(
@@ -114,12 +80,12 @@ http.interceptors.request.use(
     // Enhanced logging for debugging
     if (process.env.NODE_ENV === 'development') {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+        isServer: typeof window === 'undefined',
         baseURL: config.baseURL,
         url: config.url,
         fullURL: `${config.baseURL}${config.url}`,
         params: config.params,
-        data: config.data,
-        headers: config.headers,
+        data: config.data ? '(data present)' : '(no data)',
       });
 
       // Log the exact payload being sent
@@ -144,9 +110,8 @@ http.interceptors.response.use(
     // Log successful responses in development
     if (process.env.NODE_ENV === 'development') {
       console.log(`✅ API Response: ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-        data: response.data,
         status: response.status,
-        headers: response.headers,
+        hasData: !!response.data,
       });
     }
     return response;
@@ -155,10 +120,12 @@ http.interceptors.response.use(
     // Enhanced error logging
     if (process.env.NODE_ENV === 'development') {
       console.error(`❌ API Error: ${error.response?.status || error.code} ${error.config?.method?.toUpperCase()} ${error.config?.url}`, {
+        isServer: typeof window === 'undefined',
+        baseURL: error.config?.baseURL,
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
-        headers: error.response?.headers,
       });
     }
 
@@ -185,10 +152,9 @@ Secure HTTP-Only Cookie Usage Instructions:
      - Auth check: GET /api/auth/check (verifies cookies server-side)
      - Logout: POST /api/auth/logout (clears cookies)
 
- 4. Error handling:
-     - 401 errors indicate invalid/expired authentication
-     - Redirect to login page when authentication fails
-     - No client-side token refresh needed
+ 4. Docker support:
+     - Server-side: Uses BACKEND_URL (e.g., http://backend:8080)
+     - Client-side: Uses NEXT_PUBLIC_API_URL (e.g., http://localhost:8080)
 
  5. Security benefits:
      - Tokens never exposed to client-side JavaScript

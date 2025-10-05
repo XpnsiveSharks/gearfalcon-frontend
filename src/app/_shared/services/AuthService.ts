@@ -11,6 +11,8 @@ import { http } from "./axiosClient";
 // Type definitions for API responses
 export type LoginResponse = {
   success: boolean;
+  access_token: string;      // ← Now included from backend
+  refresh_token: string;     // ← Now included from backend
   expires_in: number;
   user: {
     id: string;

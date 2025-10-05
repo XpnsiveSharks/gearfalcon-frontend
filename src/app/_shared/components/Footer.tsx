@@ -118,7 +118,6 @@ export default function Footer() {
             </div>
             
             <div className="flex items-center gap-4">
-              <span className="text-gray-400 text-sm">Quick Access</span>
               <div className="bg-yellow-400 text-slate-900 px-4 py-2 rounded-full text-sm font-semibold">
                 19+ Years of Excellence • Since 2005
               </div>
