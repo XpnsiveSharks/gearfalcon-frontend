@@ -51,13 +51,15 @@ export default function EmergencyService() {
             Get Emergency Service
           </button>
 
-          <button className="bg-transparent border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-red-600 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+          <a
+            href="tel:+639397176257"
+            className="bg-transparent border-2 border-white text-white font-bold px-8 py-3 rounded-lg hover:bg-white hover:text-red-600 transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
+          >            <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -66,7 +68,7 @@ export default function EmergencyService() {
               />
             </svg>
             Call Now: (0939) 717-6257
-          </button>
+          </a>
         </div>
       </div>
     </section>
