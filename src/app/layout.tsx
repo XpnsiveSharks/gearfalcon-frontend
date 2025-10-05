@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import NavBar from "./shared/components/NavBar";
-import Footer from "./shared/components/Footer";
-import { AuthProvider } from "./shared/hooks/useAuth";
+import NavBar from "@/app/_shared/components/NavBar";
+import Footer from "@/app/_shared/components/Footer";
+import { AuthProvider } from "@/app/_shared/hooks/useAuth";
 
 export const metadata: Metadata = {
 	title: "Gearfalcon",
