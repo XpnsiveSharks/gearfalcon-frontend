@@ -65,11 +65,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
       // ⚠️ CRITICAL: NO tokens in response body for security!
     });
 
-    // Set access token as HTTP-only cookie
+    // Set access token as HTTP-only cookie (use 'accessToken' to match backend)
     if (loginResponse.access_token) {
-      console.log('🍪 Setting access_token cookie');
+      console.log('🍪 Setting accessToken cookie');
       
-      response.cookies.set('access_token', loginResponse.access_token, {
+      response.cookies.set('accessToken', loginResponse.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
         path: '/',
       });
       
-      console.log(`✅ Access token cookie set (expires in ${loginResponse.expires_in}s)`);
+      console.log(`✅ accessToken cookie set (expires in ${loginResponse.expires_in}s)`);
     } else {
       console.error('❌ No access_token in backend response');
     }
@@ -108,7 +108,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
       response: error.response?.data,
       status: error.response?.status,
       stack: error.stack,
+      fullError: JSON.stringify(error, null, 2),
     });
+    
+    // Also log the raw error for debugging
+    console.error('❌ Raw error object:', error);
 
     // Handle backend API errors
     if (error.response?.status === 401) {
