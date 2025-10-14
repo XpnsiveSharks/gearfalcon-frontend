@@ -14,14 +14,14 @@ export default function Home() {
 
   // Get dashboard URL based on user role
   const getDashboardUrl = () => {
-     if (!user?.role) return "/login";
-     const role = user.role.toLowerCase();
+    if (!user?.role) return "/login";
+    const role = user.role.toLowerCase();
 
-     if (role === "admin") return "/admin";
-     if (role === "customer") return "/customer";
-     if (role === "technician") return "/technician";
-     return "/login";
-   };
+    if (role === "admin") return "/admin";
+    if (role === "customer") return "/customer";
+    if (role === "technician") return "/technician";
+    return "/login";
+  };
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -83,6 +83,7 @@ export default function Home() {
               <p className="text-sm text-slate-600">Manage your preferences</p>
             </div>
           </div>
+        <Services />
         </div>
       </div>
     </main>

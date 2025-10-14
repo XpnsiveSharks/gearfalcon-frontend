@@ -47,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
 
     // Call backend login API (localhost:8080/auth/login)
     console.log('🔐 Attempting login for:', email);
-    console.log('🔗 Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
+    console.log('🔗 Backend URL:', process.env.NEXT_PUBLIC_API_URL || 'http://gearfalcon.test/');
 
     const loginResponse: LoginResponse = await AuthService.login(email, password);
     console.log('✅ Backend login successful');
