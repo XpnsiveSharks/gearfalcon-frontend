@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Home, Calendar, Settings } from 'lucide-react';
 import { JwtPayload } from "@/app/_shared/lib/jwt";
 
@@ -11,14 +12,15 @@ interface CustomerDashboardClientProps {
 type Tab = 'new' | 'pending' | 'completed' | 'canceled';
 
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('new');
   const [activeNav, setActiveNav] = useState<string>('home');
 
   const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'booking', label: 'Booking', icon: Calendar },
-    { id: 'settings', label: 'Settings', icon: Settings },
-  ];
+    { id: 'home', label: 'Home', icon: Home, href: '/customer' },
+    { id: 'booking', label: 'Booking', icon: Calendar, href: '/booking' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/customer/Settings' },
+  ];  
 
   return (
     <div className="flex flex-col md:h-screen bg-gray-50 pt-16">
@@ -35,7 +37,10 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveNav(item.id)}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    router.push(item.href);
+                  }}
                   className={`px-4 md:px-6 py-2 flex items-center gap-2 transition-all rounded-xl ${
                     activeNav === item.id
                       ? 'bg-white text-blue-500 shadow-md'

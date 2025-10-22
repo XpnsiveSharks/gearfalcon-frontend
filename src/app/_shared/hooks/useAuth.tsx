@@ -53,6 +53,7 @@ export type AuthContextValue = {
   isAuthenticated: boolean; // Boolean indicating if user is logged in
   isLoading: boolean; // Loading state for initial auth check
   setIsAuthenticated: (authenticated: boolean) => void; // Setter function to update auth state
+  setUser: (user: AuthContextValue['user']) => void; // Setter for user data
   logout: () => void; // Function to clear authentication and log out
   user?: {
     id: string;
@@ -176,10 +177,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       isLoading,
       user,
+      setUser,
       setIsAuthenticated: setIsAuthenticatedWithTimestamp,
       logout,
     }),
-    [isAuthenticated, isLoading, user, setIsAuthenticatedWithTimestamp, logout]
+    [isAuthenticated, isLoading, user, setUser, setIsAuthenticatedWithTimestamp, logout]
   );
 
   // Provide the AuthContext to child components

@@ -40,7 +40,7 @@ export function useLogin() {
 	const [error, setError] = useState<string | null>(null);
 
 	// Get setter for authentication state from AuthContext
-	const { setIsAuthenticated } = useAuth();
+	const { setIsAuthenticated, setUser } = useAuth();
 	const router = useRouter();
 
 	// Helper function to get dashboard URL based on user role
@@ -109,18 +109,11 @@ export function useLogin() {
 			// Login successful - token is now stored in HTTP-only cookie
 			// Update authentication state for UI purposes
 			setIsAuthenticated(true);
+			setUser(data.user); // Immediately update the user in the context
 
 			// Debug: Log the user data and role
 			console.log('🔍 Login successful, user data:', data);
 			console.log('🔍 User role:', data.user.role);
-			console.log('🔍 User role type:', typeof data.user.role);
-			console.log('🔍 User is_verified:', data.user.is_verified);
-
-			// Note: We don't set user data here as it's handled by useAuth hook
-			// The HTTP-only cookies will be validated by the auth check endpoint
-
-			// Also update the user information in the auth context
-			// This prevents the useAuth hook from overriding our login state
 
 			// Automatically redirect to role-based dashboard with fallback mechanism
 			const dashboardUrl = getDashboardUrl(data.user.role);
