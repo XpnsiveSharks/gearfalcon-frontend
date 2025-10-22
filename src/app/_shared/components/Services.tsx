@@ -41,7 +41,7 @@ export default function Services() {
     };
 
     return (
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex flex-col bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-lg bg-yellow-100 text-yellow-600 flex items-center justify-center">
             {icon}
@@ -49,7 +49,7 @@ export default function Services() {
           <h3 className="text-lg font-bold text-slate-900">{title}</h3>
         </div>
         <p className="text-slate-500 text-sm mb-4">{description}</p>
-        <ul className="space-y-2 mb-5">
+        <ul className="space-y-2 mb-5 flex-grow">
           {items.map((label, idx) => (
             <li
               key={idx}
@@ -89,34 +89,7 @@ export default function Services() {
           title="Our Services"
           subtitle="Complete HVAC, electrical, and fire safety solutions for residential and commercial properties"
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          <Card
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 7h18M3 12h18M3 17h18"
-                />
-              </svg>
-            }
-            title="SALES"
-            description="Premium aircon brands for your home and business"
-            items={[
-              "Daikin Air Conditioning Systems",
-              "Carrier Air Conditioning Systems",
-              "LG Air Conditioning Systems",
-              "Midea Air Conditioning Systems",
-            ]}
-            cta="Book Now"
-          />
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <Card
             icon={
               <svg

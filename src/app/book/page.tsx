@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import React, { useState, useMemo } from "react";
 import { useAuth } from "@/app/_shared/hooks/useAuth"; // ✅ use your existing auth hook
 
@@ -12,13 +13,6 @@ export default function BookPage() {
 
   // Define all sub-services per category
   const servicesMap: Record<string, string[]> = {
-    SALES: [
-      "Daikin Air Conditioning Systems",
-      "Carrier Air Conditioning Systems",
-      "LG Air Conditioning Systems",
-      "Midea Air Conditioning Systems",
-      "Samsung Air Conditioning Systems",
-    ],
     INSTALLATION: [
       "Residential Air Conditioning Installation",
       "Commercial Air Conditioning Installation",
@@ -60,7 +54,6 @@ export default function BookPage() {
   }, [service]);
 
   const [selectedSubService, setSelectedSubService] = useState("");
-  const [details, setDetails] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +61,6 @@ export default function BookPage() {
     const bookingData = {
       mainService: service,
       subService: selectedSubService,
-      details,
       user: isAuthenticated
         ? { name: user?.name, email: user?.email }
         : "Guest",
@@ -101,23 +93,7 @@ export default function BookPage() {
               </p>
               <p className="text-slate-700 text-sm">{user.email}</p>
             </div>
-          ) : (
-            <>
-              {/* ✅ If not logged in, require name/email */}
-              <input
-                type="text"
-                placeholder="Your Name"
-                className="w-full border rounded-lg px-3 py-2"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Your Email"
-                className="w-full border rounded-lg px-3 py-2"
-                required
-              />
-            </>
-          )}
+          ) : null}
 
           {/* Dropdown for sub-services */}
           <select
@@ -134,20 +110,15 @@ export default function BookPage() {
             ))}
           </select>
 
-          {/* Additional details */}
-          <textarea
-            placeholder="Additional Details"
-            className="w-full border rounded-lg px-3 py-2"
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-          />
-
-          <button
-            type="submit"
-            className="w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold py-2.5 rounded-lg transition-colors"
+          <Link
+            href={{
+              pathname: "/book/Address",
+              query: { service: service, subService: selectedSubService },
+            }}
+            className="block text-center w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold py-2.5 rounded-lg transition-colors"
           >
-            Submit Booking
-          </button>
+            Next
+          </Link>
         </form>
       )}
     </div>
