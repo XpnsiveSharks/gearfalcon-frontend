@@ -11,20 +11,16 @@ import type { InternalAxiosRequestConfig } from "axios";
 // Smart URL resolution for Docker and local development
 const getBaseURL = (): string => {
   const isServer = typeof window === 'undefined';
-  
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://gearfalcon.test';
+
   if (isServer) {
     // SERVER-SIDE (Next.js API routes in Docker container)
-    // Use Docker service name for container-to-container communication
-    const serverURL = process.env.BACKEND_URL || 'http://backend:80';
-    console.log('🐳 Server-side request detected, using:', serverURL);
-    return serverURL;
+    console.log('🐳 Server-side request detected, using:', baseURL);
   } else {
     // CLIENT-SIDE (Browser)
-    // Use localhost for browser requests
-    const clientURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-    console.log('🌐 Client-side request detected, using:', clientURL);
-    return clientURL;
+    console.log('🌐 Client-side request detected, using:', baseURL);
   }
+  return baseURL;
 };
 
 const BASE_URL = getBaseURL();
@@ -33,7 +29,6 @@ const BASE_URL = getBaseURL();
 if (process.env.NODE_ENV === 'development') {
   console.log('🔧 Axios Client Configuration:', {
     isServer: typeof window === 'undefined',
-    BACKEND_URL: process.env.BACKEND_URL || 'NOT SET',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT SET',
     resolvedURL: BASE_URL,
     NODE_ENV: process.env.NODE_ENV,
@@ -72,11 +67,30 @@ const refreshHttp = axios.create({
   timeout: 10000, // Shorter timeout for refresh requests
 });
 
+const getCookie = (name: string): string | undefined => {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    let cookie = cookies[i].trim();
+    if (cookie.startsWith(name + '=')) {
+      return cookie.substring(name.length + 1);
+    }
+  }
+  return undefined;
+};
+
 // ----------------------
 // Simplified Request interceptor
 // ----------------------
 http.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const accessToken = getCookie('accessToken');
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
     // Enhanced logging for debugging
     if (process.env.NODE_ENV === 'development') {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
@@ -86,6 +100,7 @@ http.interceptors.request.use(
         fullURL: `${config.baseURL}${config.url}`,
         params: config.params,
         data: config.data ? '(data present)' : '(no data)',
+        headers: config.headers,
       });
 
       // Log the exact payload being sent

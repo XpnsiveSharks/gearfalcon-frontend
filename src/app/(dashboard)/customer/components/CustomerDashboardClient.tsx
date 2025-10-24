@@ -1,130 +1,212 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Home, Calendar, Settings } from 'lucide-react';
 import { JwtPayload } from "@/app/_shared/lib/jwt";
-import PasswordStrengthIndicator from "@/app/_shared/components/PasswordStrengthIndicator";
+import { useCustomerInfo } from '../hooks/useCustomerInfo';
 
+type CustomerData = {
+  customer_id: number;
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_verified: boolean;
+  company_name: string;
+  contact: string;
+  address: {
+    house_number: string;
+    street: string;
+    barangay: string;
+    city: string;
+    province: string;
+    region: string;
+    postal_code: string;
+  };
+};
 interface CustomerDashboardClientProps {
   user: JwtPayload;
 }
 
+type Tab = 'new' | 'pending' | 'completed' | 'canceled';
+
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const customer: CustomerData | null = customerInfo?.customer;
 
-    if (!password) {
-      alert("Please enter a password.");
-      return;
-    }
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>('new');
+  const [activeNav, setActiveNav] = useState<string>('home');
 
-    setIsSubmitting(true);
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home, href: '/customer' },
+    { id: 'booking', label: 'Booking', icon: Calendar, href: '/booking' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/customer/Settings' },
+  ];
 
-    try {
-      // TODO: Implement API call to create customer account
-      console.log("Creating customer account:", { email, password });
-
-      // Reset form after successful submission
-      setEmail("");
-      setPassword("");
-
-      alert("Customer account created successfully!");
-    } catch (error) {
-      console.error("Error creating customer account:", error);
-      alert("Failed to create customer account. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const formatAddress = (address: CustomerData['address'] | null | undefined) => {
+    if (!address) return 'Add your Home Address';
+    return `${address.street}, ${address.city}`;
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Customer Dashboard</h1>
-        <p className="text-slate-600">Welcome back, {user.name || user.email}!</p>
-        <p className="text-sm text-slate-500">Role: {user.role} • Email: {user.email}</p>
+    <div className="flex flex-col md:h-screen bg-gray-50 pt-16">
+      {/* Top Header Bar */}
+      <div className="bg-blue-500 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4">
+          <div className="flex items-center">
+            <p className="text-sm font-medium">Welcome Back, {user.name || user.email}</p>
+          </div>
+
+          <nav className="flex gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    router.push(item.href);
+                  }}
+                  className={`px-4 md:px-6 py-2 flex items-center gap-2 transition-all rounded-xl ${
+                    activeNav === item.id
+                      ? 'bg-white text-blue-500 shadow-md'
+                      : 'hover:bg-blue-600'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Account Management Section */}
-        <div className="space-y-6">
-          <div className="p-6 bg-green-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Create Customer Account</h2>
-            <p className="text-sm text-slate-600 mb-6">
-              Create new customer accounts for service bookings and management.
-            </p>
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        {/* Header */}
+        <div className="bg-white px-8 py-6 shadow-sm">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Home</h1>
+          
+          {loading && <p>Loading profile...</p>}
+          {error && <p className="text-red-500">Could not load profile information.</p>}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
-                </label>
+          {/* Profile Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gray-50 p-4 rounded-2xl">
+              <label className="text-xs text-gray-500 block mb-2 font-medium">Full Name</label>
+              <input
+                type="text"
+                value={customer?.name || user.name || 'N/A'}
+                readOnly
+                className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
+              />
+            </div>
+            <div className="bg-gray-50 p-4 rounded-2xl">
+              <label className="text-xs text-gray-500 block mb-2 font-medium">Contact Number</label>
+              {customer?.contact ? (
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="customer@company.com"
-                  required
-                  className="w-full border border-slate-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  type="text"
+                  value={customer.contact}
+                  readOnly
+                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
                 />
-              </div>
-
-              {/* Password with Strength Indicator */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Password
-                </label>
-                <PasswordStrengthIndicator
-                  password={password}
-                  onPasswordChange={setPassword}
-                  required
-                  userType="customer"
+              ) : (
+                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
+                  Add your Contact Number
+                </a>
+              )}
+            </div>
+            <div className="bg-gray-50 p-4 rounded-2xl">
+              <label className="text-xs text-gray-500 block mb-2 font-medium">Email Address</label>
+              <input
+                type="text"
+                value={customer?.email || user.email}
+                readOnly
+                className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
+              />
+            </div>
+            <div className="bg-gray-50 p-4 rounded-2xl">
+              <label className="text-xs text-gray-500 block mb-2 font-medium">Home Address</label>
+              {customer?.address ? (
+                <input
+                  type="text"
+                  value={formatAddress(customer.address)}
+                  readOnly
+                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
                 />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-green-600 text-white py-2.5 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? "Creating Account..." : "Create Customer Account"}
-              </button>
-            </form>
+              ) : (
+                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
+                  Add your Home Address
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Dashboard Overview */}
-        <div className="space-y-6">
-          <div className="p-6 bg-slate-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Service Bookings</h2>
+        {/* Tabs */}
+        <div className="bg-white mt-6 mx-8 rounded-2xl shadow-sm px-6">
+          <div className="flex gap-2 border-b border-gray-200">
+            {[
+              { id: 'new', label: 'New Requests' },
+              { id: 'pending', label: 'Pending Requests' },
+              { id: 'completed', label: 'Completed Requests' },
+              { id: 'canceled', label: 'Canceled Requests' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as Tab)}
+                className={`py-3 px-4 text-sm font-medium transition-all -mb-px ${
+                  activeTab === tab.id
+                    ? 'border-b-2 border-blue-500 text-blue-500'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 bg-white rounded-md border">
-                <h3 className="font-semibold text-slate-900">Active Bookings</h3>
-                <p className="text-sm text-slate-600 mt-1">View and manage your service appointments</p>
+        {/* Content Area */}
+        <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* New Requests Panel */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-blue-500 mb-4">New Requests</h2>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+              <p className="mb-4 font-medium">No data available yet</p>
+              <div className="flex items-center gap-2 mb-4">
+                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">First</button>
+                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">&lt;&lt;</button>
+                <button className="px-4 py-2 text-sm bg-blue-500 text-white rounded-xl font-medium shadow-md">1 / 0</button>
+                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">&gt;&gt;</button>
+                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">Last</button>
               </div>
-
-              <div className="p-4 bg-white rounded-md border">
-                <h3 className="font-semibold text-slate-900">Service History</h3>
-                <p className="text-sm text-slate-600 mt-1">Review past services and maintenance</p>
-              </div>
+              <p className="text-sm text-gray-400">Showing 0 to 0 of 0 entries</p>
             </div>
           </div>
 
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Quick Actions</h3>
-            <div className="space-y-2">
-              <button className="w-full text-left p-3 bg-white rounded border hover:bg-slate-50 transition-colors">
-                Book New Service
-              </button>
-              <button className="w-full text-left p-3 bg-white rounded border hover:bg-slate-50 transition-colors">
-                View Service Quotes
-              </button>
+          {/* Service Details Panel */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-lg font-bold text-blue-500 mb-4">Service Details</h2>
+            <div className="flex flex-col items-center justify-center py-20">
+              <svg
+                className="w-24 h-24 text-gray-300 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
+                />
+              </svg>
+              <p className="text-gray-500 font-medium">Select a Service Request ID</p>
             </div>
           </div>
         </div>
