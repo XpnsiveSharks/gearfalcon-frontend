@@ -112,8 +112,7 @@ export default function BookPage() {
 
           <Link
             href={{
-              pathname: "/book/Address",
-              query: { service: service, subService: selectedSubService },
+              pathname: "/book/UnitDetails",
             }}
             className="block text-center w-full bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-semibold py-2.5 rounded-lg transition-colors"
           >
