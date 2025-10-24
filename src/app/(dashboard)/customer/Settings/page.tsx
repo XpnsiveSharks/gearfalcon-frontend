@@ -1,11 +1,33 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Home, Calendar, Settings } from 'lucide-react';
 import { useCustomerInfo } from '../hooks/useCustomerInfo';
+
+type CustomerData = {
+  customer_id: number;
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_verified: boolean;
+  company_name: string;
+  contact: string;
+  address: {
+    house_number: string;
+    street: string;
+    barangay: string;
+    city: string;
+    province: string;
+    region: string;
+    postal_code: string;
+  };
+};
 
 const SettingsPage: React.FC = () => {
   // The API response nests customer data under a 'customer' key. We use a type assertion to inform TypeScript.
-  const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null };
+  const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: { customer: CustomerData } | null, loading: boolean, error: string | null };
 
   React.useEffect(() => {
     if (customerInfo) {
@@ -13,8 +35,16 @@ const SettingsPage: React.FC = () => {
     }
   }, [customerInfo]);
 
+  const router = useRouter();
+  const [activeNav, setActiveNav] = useState<string>('settings');
 
-  const customer = customerInfo?.customer; 
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home, href: '/customer' },
+    { id: 'booking', label: 'Booking', icon: Calendar, href: '/booking' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/customer/Settings' },
+  ];
+
+  const customer = customerInfo?.customer;
 
   if (loading) {
     return <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">Loading...</div>;
@@ -33,7 +63,41 @@ const SettingsPage: React.FC = () => {
   const serviceAddress = customer?.address ? formatAddress(customer.address) : '';
 
   return (
-    <div className="max-w-4xl mx-auto p-6 pt-24 bg-gray-50 min-h-screen">
+    <div className="flex flex-col md:h-screen bg-gray-50 pt-16">
+      {/* Top Header Bar */}
+      <div className="bg-blue-500 text-white shadow-lg">
+        <div className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4">
+          <div className="flex items-center">
+            <p className="text-sm font-medium">Welcome Back, {customer?.name || customer?.email}</p>
+          </div>
+
+          <nav className="flex gap-2">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    router.push(item.href);
+                  }}
+                  className={`px-4 md:px-6 py-2 flex items-center gap-2 transition-all rounded-xl ${
+                    activeNav === item.id
+                      ? 'bg-white text-blue-500 shadow-md'
+                      : 'hover:bg-blue-600'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-6">
       {/* Account Details Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
@@ -94,6 +158,7 @@ const SettingsPage: React.FC = () => {
             </button>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
