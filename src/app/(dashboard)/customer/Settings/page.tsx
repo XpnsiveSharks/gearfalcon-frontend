@@ -1,81 +1,102 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCustomerInfo } from '../hooks/useCustomerInfo';
 
-// Define a type that matches the actual API response for clarity
-type CustomerData = {
-  customer_id: number;
-  user_id: string;
-  name: string;
-  email: string;
-  role: string;
-  is_verified: boolean;
-  company_name: string;
-  address: {
-    house_number: string;
-    street: string;
-    barangay: string;
-    city: string;
-    province: string;
-    region: string;
-    postal_code: string;
-  };
-};
-
-const CustomerSettingsPage = () => {
-  // We cast the result to `any` to handle the discrepancy between the project's `User` type and the actual API response.
+const SettingsPage: React.FC = () => {
+  // The API response nests customer data under a 'customer' key. We use a type assertion to inform TypeScript.
   const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null };
 
+  React.useEffect(() => {
+    if (customerInfo) {
+      console.log('Customer Info:', customerInfo);
+    }
+  }, [customerInfo]);
+
+
+  const customer = customerInfo?.customer; 
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen"><p>Loading customer information...</p></div>;
+    return <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">Loading...</div>;
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-screen"><p className="text-red-500">Error: {error}</p></div>;
+    return <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">Error: {error}</div>;
   }
 
-  // The API response nests the customer data under a 'customer' key.
-  const customer: CustomerData | null = customerInfo?.customer;
+  const formatAddress = (address: any) => {
+    if (!address) return null;
+    const { house_number, street, barangay, city, province, postal_code, region } = address;
+    return [house_number, street, barangay, city, province, postal_code, region].filter(Boolean).join(', ');
+  };
 
-  if (!customer) {
-    return <div className="flex justify-center items-center h-screen"><p>No customer information found.</p></div>;
-  }
+  const serviceAddress = customer?.address ? formatAddress(customer.address) : '';
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">Customer Settings</h1>
-      
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Personal Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p><strong>Name:</strong> {customer.name}</p>
-          <p><strong>Email:</strong> {customer.email}</p>
-          <p><strong>Role:</strong> {customer.role}</p>
-          <p><strong>Verified:</strong> {customer.is_verified ? 'Yes' : 'No'}</p>
-          <p><strong>Company Name:</strong> {customer.company_name}</p>
-          <p><strong>Customer ID:</strong> {customer.customer_id}</p>
-          <p><strong>User ID:</strong> {customer.user_id}</p>
+    <div className="max-w-4xl mx-auto p-6 pt-24 bg-gray-50 min-h-screen">
+      {/* Account Details Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-blue-500">Account Details</h2>
+          <button className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+            EDIT
+          </button>
         </div>
 
-        {customer.address && (
-          <>
-            <h2 className="text-2xl font-semibold mt-8 mb-4 border-b pb-2">Address</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <p><strong>House Number:</strong> {customer.address.house_number}</p>
-              <p><strong>Street:</strong> {customer.address.street}</p>
-              <p><strong>Barangay:</strong> {customer.address.barangay}</p>
-              <p><strong>City:</strong> {customer.address.city}</p>
-              <p><strong>Province:</strong> {customer.address.province}</p>
-              <p><strong>Region:</strong> {customer.address.region}</p>
-              <p><strong>Postal Code:</strong> {customer.address.postal_code}</p>
+        <div className="grid grid-cols-2 gap-8">
+          {/* Email Address */}
+          <div>
+            <label className="text-sm text-gray-500 block mb-2">Email Address</label>
+            <p className="text-sm text-gray-800 font-medium mb-2">{customer?.email || 'N/A'}</p>
+            {customer?.is_verified && (
+              <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                Verified
+              </span>
+            )}
+          </div>
+
+          {/* Mobile Number */}
+          <div>
+            <label className="text-sm text-gray-500 block mb-2">Mobile Number</label>
+            <p className="text-sm text-gray-800 font-medium mb-2">{customer?.contact || 'N/A'}</p>
+            {customer?.contact ? (
+                 <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    Verified
+                 </span>
+            ) : (
+              <span className="inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">
+                Add your number
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Address Details Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-blue-500">Address Details</h2>
+          <button className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors">
+            EDIT
+          </button>
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-500 block mb-3">Service Address</label>
+          {serviceAddress ? (
+            <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-sm text-gray-800">{serviceAddress}</p>
             </div>
-          </>
-        )}
+          ) : (
+            <button className="px-4 py-3 border-2 border-dashed border-blue-300 text-blue-500 text-sm font-medium rounded-xl hover:bg-blue-50 transition-colors flex items-center gap-2">
+              <span className="text-lg">+</span>
+              ADD YOUR ADDRESS
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default CustomerSettingsPage;
+export default SettingsPage;

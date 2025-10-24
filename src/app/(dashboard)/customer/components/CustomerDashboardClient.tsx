@@ -1,10 +1,30 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, Calendar, Settings } from 'lucide-react';
 import { JwtPayload } from "@/app/_shared/lib/jwt";
+import { useCustomerInfo } from '../hooks/useCustomerInfo';
 
+type CustomerData = {
+  customer_id: number;
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_verified: boolean;
+  company_name: string;
+  contact: string;
+  address: {
+    house_number: string;
+    street: string;
+    barangay: string;
+    city: string;
+    province: string;
+    region: string;
+    postal_code: string;
+  };
+};
 interface CustomerDashboardClientProps {
   user: JwtPayload;
 }
@@ -12,6 +32,10 @@ interface CustomerDashboardClientProps {
 type Tab = 'new' | 'pending' | 'completed' | 'canceled';
 
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
+  const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null };
+
+  const customer: CustomerData | null = customerInfo?.customer;
+
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('new');
   const [activeNav, setActiveNav] = useState<string>('home');
@@ -20,7 +44,12 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
     { id: 'home', label: 'Home', icon: Home, href: '/customer' },
     { id: 'booking', label: 'Booking', icon: Calendar, href: '/booking' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/customer/Settings' },
-  ];  
+  ];
+
+  const formatAddress = (address: CustomerData['address'] | null | undefined) => {
+    if (!address) return 'Add your Home Address';
+    return `${address.street}, ${address.city}`;
+  };
 
   return (
     <div className="flex flex-col md:h-screen bg-gray-50 pt-16">
@@ -62,37 +91,58 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         <div className="bg-white px-8 py-6 shadow-sm">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Home</h1>
           
+          {loading && <p>Loading profile...</p>}
+          {error && <p className="text-red-500">Could not load profile information.</p>}
+
           {/* Profile Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-gray-50 p-4 rounded-2xl">
               <label className="text-xs text-gray-500 block mb-2 font-medium">Full Name</label>
               <input
                 type="text"
-                value={user.name || 'N/A'}
+                value={customer?.name || user.name || 'N/A'}
                 readOnly
                 className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
               />
             </div>
             <div className="bg-gray-50 p-4 rounded-2xl">
               <label className="text-xs text-gray-500 block mb-2 font-medium">Contact Number</label>
-              <a href="#" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
-                Add your Contact Number
-              </a>
+              {customer?.contact ? (
+                <input
+                  type="text"
+                  value={customer.contact}
+                  readOnly
+                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
+                />
+              ) : (
+                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
+                  Add your Contact Number
+                </a>
+              )}
             </div>
             <div className="bg-gray-50 p-4 rounded-2xl">
               <label className="text-xs text-gray-500 block mb-2 font-medium">Email Address</label>
               <input
                 type="text"
-                value={user.email}
+                value={customer?.email || user.email}
                 readOnly
                 className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
               />
             </div>
             <div className="bg-gray-50 p-4 rounded-2xl">
               <label className="text-xs text-gray-500 block mb-2 font-medium">Home Address</label>
-              <a href="#" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
-                Add your Home Address
-              </a>
+              {customer?.address ? (
+                <input
+                  type="text"
+                  value={formatAddress(customer.address)}
+                  readOnly
+                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
+                />
+              ) : (
+                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
+                  Add your Home Address
+                </a>
+              )}
             </div>
           </div>
         </div>

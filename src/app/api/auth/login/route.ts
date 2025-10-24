@@ -70,7 +70,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginApiR
       console.log('🍪 Setting accessToken cookie');
       
       response.cookies.set('accessToken', loginResponse.access_token, {
-        httpOnly: true,
+        httpOnly: false, // for the time being don't add this just stash it
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: loginResponse.expires_in || 900, // Use backend expiry

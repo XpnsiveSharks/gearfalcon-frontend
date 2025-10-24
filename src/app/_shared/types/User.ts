@@ -14,7 +14,10 @@ export interface User {
   avatar_url?: string;
 
   // Contact Info
-  phone?: string;
+  contact?: string;
+  company_name?: string;
+  is_verified?: boolean;
+  address?: any;
 
   // Credentials
   email: string;
