@@ -15,7 +15,7 @@ type Tab = 'bookings' | 'history' | 'profile';
 // Define the type for customer data, similar to SettingsPage
 type CustomerData = {
   customer_id: number;
-  user_id: string;
+  user_id: number;
   name: string;
   email: string;
   role: string;
