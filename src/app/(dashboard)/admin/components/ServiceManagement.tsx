@@ -1,4 +1,3 @@
-								
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -18,7 +17,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 px-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-800">{title}</h3>
@@ -110,35 +109,31 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({ isOpen, onClose, on
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<number | string>('');
   const [price, setPrice] = useState('');
-  const [duration, setDuration] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       setName(service ? service.name : '');
       setDescription(service ? service.description || '' : '');
       setCategoryId(service ? service.category_id : '');
-      setPrice(service ? service.base_price : '');
-      setDuration(service ? String(service.duration_minutes) : '');
+      setPrice(service && service.base_price ? service.base_price : '');
     } else {
       setName('');
       setDescription('');
       setCategoryId('');
       setPrice('');
-      setDuration('');
     }
   }, [isOpen, service]);
 
   const handleSubmit = () => {
-    if (!name.trim() || !categoryId || !price.trim() || !duration.trim()) {
-      alert('Please fill all required fields: Name, Category, Price, and Duration.');
+    if (!name.trim() || !categoryId || !price.trim()) {
+      alert('Please fill all required fields: Name, Category, and Price.');
       return;
     }
     const serviceData = {
       name,
       description,
       category_id: Number(categoryId),
-      price: parseFloat(price),
-      duration_minutes: parseInt(duration, 10),
+      base_price: price, // Send price as a string under base_price
     };
     onSubmit(service ? { id: service.id, data: serviceData } : serviceData);
   };
@@ -172,10 +167,6 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({ isOpen, onClose, on
         <div>
           <label htmlFor="service-price" className="block text-sm font-medium text-gray-700 mb-1">Price (PHP) <span className="text-red-500">*</span></label>
           <input id="service-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-        </div>
-        <div className="md:col-span-2">
-          <label htmlFor="service-duration" className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes) <span className="text-red-500">*</span></label>
-          <input id="service-duration" type="number" value={duration} onChange={(e) => setDuration(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required />
         </div>
         <div className="md:col-span-2">
           <label htmlFor="service-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -345,16 +336,16 @@ const ServiceManagement: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {servicesLoading ? (
-                  <tr><td colSpan={3} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
+                  <tr><td colSpan={4} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
                 ) : servicesError ? (
-                  <tr><td colSpan={3} className="p-6 text-center text-red-500">{servicesError}</td></tr>
+                  <tr><td colSpan={4} className="p-6 text-center text-red-500">{servicesError}</td></tr>
                 ) : filteredServices.map((srv) => (
                   <tr key={srv.id} className="hover:bg-gray-50">
                     <td className="p-4">
                       <p className="font-medium">{srv.name}</p>
                       <p className="text-sm text-gray-500">{categoryMap.get(srv.category_id) || 'Uncategorized'}</p>
                     </td>
-                    <td className="p-4 font-medium">₱{parseFloat(srv.base_price).toLocaleString()}</td>
+                    <td className="p-4 font-medium">₱{srv.base_price ? parseFloat(srv.base_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <button onClick={() => { setEditingService(srv); setServiceModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>

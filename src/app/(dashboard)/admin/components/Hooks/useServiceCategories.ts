@@ -27,7 +27,6 @@ export interface Service {
   name: string;
   description: string | null;
   base_price: string;
-  duration_minutes: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -37,16 +36,14 @@ export interface AddServiceData {
   category_id: number;
   name: string;
   description?: string;
-  price: number;
-  duration_minutes: number;
+  base_price: string;
 }
 
 export interface UpdateServiceData {
   category_id?: number;
   name?: string;
   description?: string;
-  price?: number;
-  duration_minutes?: number;
+  base_price?: string;
 }
 
 export function useServiceCategories() {
