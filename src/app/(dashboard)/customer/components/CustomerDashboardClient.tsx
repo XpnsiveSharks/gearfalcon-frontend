@@ -2,13 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Home, Calendar, Settings } from 'lucide-react';
+import { Home, Calendar, Settings, Clock, CheckCircle, CreditCard, MapPin } from 'lucide-react';
 import { JwtPayload } from "@/app/_shared/lib/jwt";
 import { useCustomerInfo } from '../hooks/useCustomerInfo';
 
+
+interface CustomerDashboardClientProps {
+  user: JwtPayload;
+}
+type Tab = 'bookings' | 'history' | 'profile';
+
+// Define the type for customer data, similar to SettingsPage
 type CustomerData = {
   customer_id: number;
-  user_id: string;
+  user_id: number;
   name: string;
   email: string;
   role: string;
@@ -25,19 +32,12 @@ type CustomerData = {
     postal_code: string;
   };
 };
-interface CustomerDashboardClientProps {
-  user: JwtPayload;
-}
-
-type Tab = 'new' | 'pending' | 'completed' | 'canceled';
 
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
   const { customerInfo, loading, error } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null };
 
-  const customer: CustomerData | null = customerInfo?.customer;
-
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('new');
+  const [activeTab, setActiveTab] = useState<Tab>('bookings');
   const [activeNav, setActiveNav] = useState<string>('home');
 
   const navItems = [
@@ -45,171 +45,210 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
     { id: 'booking', label: 'Booking', icon: Calendar, href: '/booking' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/customer/Settings' },
   ];
+  
+  const customer = customerInfo?.customer;
+  if (loading) {
+    return <div className="flex flex-col h-screen bg-gray-50 items-center justify-center text-gray-700">Loading dashboard...</div>;
+  }
 
-  const formatAddress = (address: CustomerData['address'] | null | undefined) => {
-    if (!address) return 'Add your Home Address';
-    return `${address.street}, ${address.city}`;
+  if (error) {
+    return <div className="flex flex-col h-screen bg-gray-50 items-center justify-center text-red-600">Error: {error}</div>;
+  }
+
+  const ProfileView: React.FC<{ customer: CustomerData | null }> = ({ customer }) => {
+    const formatAddress = (address: any) => {
+      if (!address) return null;
+      const { house_number, street, barangay, city, province, postal_code, region } = address;
+      return [house_number, street, barangay, city, province, postal_code, region].filter(Boolean).join(', ');
+    };
+  
+    const serviceAddress = customer?.address ? formatAddress(customer.address) : '';
+  
+    return (
+      <div className="space-y-6">
+        {/* Account Details Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Account Details</h2>
+            <button 
+              onClick={() => router.push('/customer/Settings')}
+              className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              EDIT
+            </button>
+          </div>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Email Address */}
+            <div>
+              <label className="text-sm text-gray-500 block mb-2">Email Address</label>
+              <p className="text-sm text-gray-800 font-medium mb-2">{customer?.email || 'N/A'}</p>
+              {customer?.is_verified && (
+                <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                  Verified
+                </span>
+              )}
+            </div>
+  
+            {/* Mobile Number */}
+            <div>
+              <label className="text-sm text-gray-500 block mb-2">Mobile Number</label>
+              <p className="text-sm text-gray-800 font-medium mb-2">{customer?.contact || 'N/A'}</p>
+              {customer?.contact ? (
+                   <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                      Verified
+                   </span>
+              ) : (
+                <span className="inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">
+                  Add your number
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+  
+        {/* Address Details Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Address Details</h2>
+            <button 
+              onClick={() => router.push('/customer/Settings')}
+              className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              EDIT
+            </button>
+          </div>
+  
+          <div>
+            <label className="text-sm text-gray-500 block mb-3">Service Address</label>
+            {serviceAddress ? (
+              <div className="p-4 border rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-800">{serviceAddress}</p>
+              </div>
+            ) : (
+              <button 
+                onClick={() => router.push('/customer/Settings')}
+                className="px-4 py-3 border-2 border-dashed border-blue-300 text-blue-500 text-sm font-medium rounded-xl hover:bg-blue-50 transition-colors flex items-center gap-2"
+              >
+                <span className="text-lg">+</span>
+                ADD YOUR ADDRESS
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="flex flex-col md:h-screen bg-gray-50 pt-16">
-      {/* Top Header Bar */}
-      <div className="bg-blue-500 text-white shadow-lg">
-        <div className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-4 gap-4">
-          <div className="flex items-center">
-            <p className="text-sm font-medium">Welcome Back, {user.name || user.email}</p>
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto p-8">
+        {/* Welcome Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {user.name}!</h1>
+          <p className="text-gray-600">Manage your HVAC service bookings and view service history</p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Active Bookings</p>
+                <h3 className="text-3xl font-bold text-gray-900">0</h3> {/* Replaced hardcoded value */}
+              </div>
+              <div className="p-3 bg-blue-50 rounded-xl">
+                <Calendar className="text-blue-500" size={24} />
+              </div>
+            </div>
           </div>
 
-          <nav className="flex gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveNav(item.id);
-                    router.push(item.href);
-                  }}
-                  className={`px-4 md:px-6 py-2 flex items-center gap-2 transition-all rounded-xl ${
-                    activeNav === item.id
-                      ? 'bg-white text-blue-500 shadow-md'
-                      : 'hover:bg-blue-600'
-                  }`}
-                >
-                  <Icon size={18} />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Completed Services</p>
+                <h3 className="text-3xl font-bold text-gray-900">0</h3> {/* Replaced hardcoded value */}
+              </div>
+              <div className="p-3 bg-green-50 rounded-xl">
+                <CheckCircle className="text-green-500" size={24} />
+              </div>
+            </div>
+          </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <div className="bg-white px-8 py-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Home</h1>
-          
-          {loading && <p>Loading profile...</p>}
-          {error && <p className="text-red-500">Could not load profile information.</p>}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Pending Payments</p>
+                <h3 className="text-3xl font-bold text-gray-900">₱0</h3> {/* Replaced hardcoded value */}
+              </div>
+              <div className="p-3 bg-orange-50 rounded-xl">
+                <CreditCard className="text-orange-500" size={24} />
+              </div>
+            </div>
+          </div>
 
-          {/* Profile Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gray-50 p-4 rounded-2xl">
-              <label className="text-xs text-gray-500 block mb-2 font-medium">Full Name</label>
-              <input
-                type="text"
-                value={customer?.name || user.name || 'N/A'}
-                readOnly
-                className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
-              />
-            </div>
-            <div className="bg-gray-50 p-4 rounded-2xl">
-              <label className="text-xs text-gray-500 block mb-2 font-medium">Contact Number</label>
-              {customer?.contact ? (
-                <input
-                  type="text"
-                  value={customer.contact}
-                  readOnly
-                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
-                />
-              ) : (
-                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
-                  Add your Contact Number
-                </a>
-              )}
-            </div>
-            <div className="bg-gray-50 p-4 rounded-2xl">
-              <label className="text-xs text-gray-500 block mb-2 font-medium">Email Address</label>
-              <input
-                type="text"
-                value={customer?.email || user.email}
-                readOnly
-                className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
-              />
-            </div>
-            <div className="bg-gray-50 p-4 rounded-2xl">
-              <label className="text-xs text-gray-500 block mb-2 font-medium">Home Address</label>
-              {customer?.address ? (
-                <input
-                  type="text"
-                  value={formatAddress(customer.address)}
-                  readOnly
-                  className="w-full text-sm text-gray-700 bg-transparent border-none p-0 focus:outline-none font-medium"
-                />
-              ) : (
-                <a href="/customer/Settings" className="text-sm text-blue-400 hover:text-blue-500 font-medium">
-                  Add your Home Address
-                </a>
-              )}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Next Service</p>
+                <h3 className="text-3xl font-bold text-gray-900">N/A</h3> {/* Replaced hardcoded value */}
+              </div>
+              <div className="p-3 bg-purple-50 rounded-xl">
+                <Clock className="text-purple-500" size={24} />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white mt-6 mx-8 rounded-2xl shadow-sm px-6">
-          <div className="flex gap-2 border-b border-gray-200">
-            {[
-              { id: 'new', label: 'New Requests' },
-              { id: 'pending', label: 'Pending Requests' },
-              { id: 'completed', label: 'Completed Requests' },
-              { id: 'canceled', label: 'Canceled Requests' },
-            ].map((tab) => (
+        <div className="bg-white rounded-full shadow-sm mb-6 p-2 flex gap-2">
+          {[
+            { id: 'bookings', label: 'My Bookings' },
+            { id: 'history', label: 'Service History' },
+            { id: 'profile', label: 'Profile' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as Tab)}
+              className={`flex-1 px-6 py-2 text-sm font-medium rounded-full transition-all ${
+                activeTab === tab.id
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'bookings' && (
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Current Bookings</h2>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as Tab)}
-                className={`py-3 px-4 text-sm font-medium transition-all -mb-px ${
-                  activeTab === tab.id
-                    ? 'border-b-2 border-blue-500 text-blue-500'
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                }`}
+                onClick={() => router.push('/booking')}
+                className="px-6 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors"
               >
-                {tab.label}
+                Book New Service
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* New Requests Panel */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-bold text-blue-500 mb-4">New Requests</h2>
-            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-              <p className="mb-4 font-medium">No data available yet</p>
-              <div className="flex items-center gap-2 mb-4">
-                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">First</button>
-                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">&lt;&lt;</button>
-                <button className="px-4 py-2 text-sm bg-blue-500 text-white rounded-xl font-medium shadow-md">1 / 0</button>
-                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">&gt;&gt;</button>
-                <button className="px-4 py-2 text-sm bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">Last</button>
-              </div>
-              <p className="text-sm text-gray-400">Showing 0 to 0 of 0 entries</p>
+            </div>
+            <div className="space-y-4 text-center text-gray-500 bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
+              <p>No current bookings to display.</p>
             </div>
           </div>
+        )}
 
-          {/* Service Details Panel */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-lg font-bold text-blue-500 mb-4">Service Details</h2>
-            <div className="flex flex-col items-center justify-center py-20">
-              <svg
-                className="w-24 h-24 text-gray-300 mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
-                />
-              </svg>
-              <p className="text-gray-500 font-medium">Select a Service Request ID</p>
-            </div>
+        {activeTab === 'history' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 text-center text-gray-500">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Service History</h2>
+            <p>No completed services yet.</p>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'profile' && <ProfileView customer={customer} />}
+
       </div>
     </div>
   );
