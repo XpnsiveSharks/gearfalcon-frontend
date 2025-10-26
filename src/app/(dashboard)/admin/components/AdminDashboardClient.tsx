@@ -1,157 +1,280 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import { JwtPayload } from "@/app/_shared/lib/jwt";
-import PasswordStrengthIndicator from "@/app/_shared/components/PasswordStrengthIndicator";
+import { Calendar, Clock, DollarSign, Star } from 'lucide-react';
+import CustomerManagement from './CustomerManagement';
+import TechnicianManagement from './TechnicianManagement';
+import BookingManagement from './BookingManagement';
+import ScheduleManagement from './ScheduleManagement';
+import ServiceManagement from './ServiceManagement';
+import ReportsAnalytics from './ReportsAnalytics';
 
 interface AdminDashboardClientProps {
   user: JwtPayload;
 }
 
+type TimeRange = 'Last 7 days' | 'Last 30 days' | 'Last 90 days';
+
+interface Booking {
+  name: string;
+  service: string;
+  status: 'confirmed' | 'in-progress' | 'completed';
+  amount: number;
+}
+
+interface Technician {
+  name: string;
+  specialties: string;
+  status: 'busy' | 'available';
+  jobs: number;
+}
+
 export default function AdminDashboardClient({ user }: AdminDashboardClientProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [timeRange, setTimeRange] = useState<TimeRange>('Last 7 days');
   const router = useRouter();
 
-  const handleLogout = async () => {
-    try {
-      // Call logout API to clear HTTP-only cookies
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.error('Logout API error:', error);
-    }
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [hasDragged, setHasDragged] = useState(false);
 
-    // Redirect to home page
-    router.push("/");
+
+  const tabs = [
+    'Overview',
+    'Bookings',
+    'Customers',
+    'Technicians',
+    'Services',
+    'Schedule',
+    'Reports'
+  ];
+
+  // Data should be fetched from an API
+  const recentBookings: Booking[] = [];
+
+  // Data should be fetched from an API
+  const technicians: Technician[] = [];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-700';
+      case 'in-progress':
+        return 'bg-purple-100 text-purple-700';
+      case 'completed':
+        return 'bg-green-100 text-green-700';
+      case 'busy':
+        return 'bg-orange-100 text-orange-700';
+      case 'available':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!tabsContainerRef.current) return;
+    setIsDragging(true);
+    setHasDragged(false); // Reset drag status on new mousedown
+    setStartX(e.pageX - tabsContainerRef.current.offsetLeft);
+    setScrollLeft(tabsContainerRef.current.scrollLeft);
+  };
+
+  const handleMouseLeaveOrUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !tabsContainerRef.current) return;
     e.preventDefault();
-
-    if (!password) {
-      alert("Please enter a password.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // TODO: Implement API call to create admin account
-      console.log("Creating admin account:", { email, password });
-
-      // Reset form after successful submission
-      setEmail("");
-      setPassword("");
-
-      alert("Admin account created successfully!");
-    } catch (error) {
-      console.error("Error creating admin account:", error);
-      alert("Failed to create admin account. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    setHasDragged(true); // User is dragging
+    const x = e.pageX - tabsContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5; // The multiplier makes scrolling feel more natural
+    tabsContainerRef.current.scrollLeft = scrollLeft - walk;
   };
+
+  const handleTabClick = (tab: string) => {
+    if (hasDragged) {
+      return; // Don't change tab if user was dragging
+    }
+    setActiveTab(tab.toLowerCase());
+  };
+
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-slate-600">Welcome back, {user.name || user.email}!</p>
-        <p className="text-sm text-slate-500">Role: {user.role} • Email: {user.email}</p>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      {/* Welcome Header & Logout */}
+      {/* Navigation Tabs */}
+      <div
+        ref={tabsContainerRef}
+        className="bg-white rounded-full shadow-sm mb-8 p-2 flex gap-2 w-full overflow-x-auto cursor-grab active:cursor-grabbing select-none"
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeaveOrUp}
+        onMouseUp={handleMouseLeaveOrUp}
+        onMouseMove={handleMouseMove}
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => handleTabClick(tab)}
+            className={`flex-1 text-center whitespace-nowrap px-6 py-2 text-sm font-medium rounded-full transition-all ${
+              activeTab === tab.toLowerCase()
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* User Management Section */}
-        <div className="space-y-6">
-          <div className="p-6 bg-blue-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Create Admin Account</h2>
-            <p className="text-sm text-slate-600 mb-6">
-              Create new admin accounts for your organization. Admins have full access to all system features.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@company.com"
-                  required
-                  className="w-full border border-slate-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Password with Strength Indicator */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Password
-                </label>
-                <PasswordStrengthIndicator
-                  password={password}
-                  onPasswordChange={setPassword}
-                  required
-                  userType="admin"
-                />
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-blue-600 text-white py-2.5 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {isSubmitting ? "Creating Account..." : "Create Admin Account"}
-              </button>
-            </form>
+      {activeTab === 'overview' && (
+        <>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Business Overview</h1>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+              className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option>Last 7 days</option>
+              <option>Last 30 days</option>
+              <option>Last 90 days</option>
+            </select>
           </div>
-        </div>
 
-        {/* Dashboard Overview */}
-        <div className="space-y-6">
-          <div className="p-6 bg-slate-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Dashboard Overview</h2>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-white rounded-md border">
-                <h3 className="font-semibold text-slate-900">User Management</h3>
-                <p className="text-sm text-slate-600 mt-1">Manage user accounts and permissions</p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Total Bookings */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
+                  <h3 className="text-3xl md:text-4xl font-bold text-gray-900">0</h3>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-xl">
+                  <Calendar className="text-blue-500" size={24} />
+                </div>
               </div>
+              <p className="text-sm text-gray-500 font-medium">No data available</p>
+            </div>
 
-              <div className="p-4 bg-white rounded-md border">
-                <h3 className="font-semibold text-slate-900">System Settings</h3>
-                <p className="text-sm text-slate-600 mt-1">Configure system preferences</p>
+            {/* Active Bookings */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Active Bookings</p>
+                  <h3 className="text-3xl md:text-4xl font-bold text-gray-900">0</h3>
+                </div>
+                <div className="p-3 bg-orange-50 rounded-xl">
+                  <Clock className="text-orange-500" size={24} />
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 font-medium">No data available</p>
+            </div>
+
+            {/* Total Revenue */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
+                  <h3 className="text-3xl md:text-4xl font-bold text-gray-900">₱0</h3>
+                </div>
+                <div className="p-3 bg-green-50 rounded-xl">
+                  <DollarSign className="text-green-500" size={24} />
+                </div>
+              </div>
+              <p className="text-sm text-gray-500 font-medium">No data available</p>
+            </div>
+
+            {/* Customer Rating */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Customer Rating</p>
+                  <h3 className="text-3xl md:text-4xl font-bold text-gray-900">N/A</h3>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-xl">
+                  <Star className="text-yellow-500 fill-yellow-500" size={24} />
+                </div>
+              </div>
+              <p className="text-sm text-green-600 font-medium">Excellent service rating</p>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Bookings */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Recent Bookings</h2>
+              <div className="space-y-4">
+                {recentBookings.length > 0 ? (
+                  recentBookings.map((booking, index) => (
+                  <div key={index} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">{booking.name}</h4>
+                      <p className="text-sm text-gray-600">{booking.service}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                        {booking.status}
+                      </span>
+                      <p className="text-sm font-semibold text-gray-900 w-16 text-right">₱{booking.amount}</p>
+                    </div>
+                  </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No recent bookings.</p>
+                )
+                }
               </div>
             </div>
 
-            <div className="mt-4">
-              <button
-                onClick={handleLogout}
-                className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Logout
-              </button>
+            {/* Technician Status */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Technician Status</h2>
+              <div className="space-y-4">
+                {technicians.length > 0 ? (
+                  technicians.map((tech, index) => (
+                  <div key={index} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">{tech.name}</h4>
+                      <p className="text-sm text-gray-600">{tech.specialties}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(tech.status)}`}>
+                        {tech.status}
+                      </span>
+                      <p className="text-sm text-gray-600 w-16 text-right">{tech.jobs} jobs</p>
+                    </div>
+                  </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No technicians to display.</p>
+                )
+                }
+              </div>
             </div>
           </div>
+        </>
+      )}
 
-          <div className="p-6 bg-green-50 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Recent Activity</h3>
-            <p className="text-sm text-slate-600">
-              Activity log and system notifications will be displayed here.
-            </p>
-          </div>
-        </div>
-      </div>
+      {activeTab === 'bookings' && <BookingManagement />}
+
+      {activeTab === 'customers' && <CustomerManagement />}
+
+      {activeTab === 'technicians' && <TechnicianManagement />}
+
+      {activeTab === 'services' && <ServiceManagement />}
+
+      {activeTab === 'schedule' && <ScheduleManagement />}
+
+      {activeTab === 'reports' && <ReportsAnalytics />}
     </div>
   );
 }

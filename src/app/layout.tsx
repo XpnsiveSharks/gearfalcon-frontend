@@ -15,11 +15,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			<body>
 				<AuthProvider>
 					<NavBar/>
-					<main>{children}</main>
+					<main className="pt-16">{children}</main>
 					<Footer/>
 				</AuthProvider>
 			</body>
 		</html>
 	);
 }
-
