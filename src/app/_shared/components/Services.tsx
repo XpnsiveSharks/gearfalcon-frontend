@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useMemo } from "react";
+import { useServices } from "@/app/_shared/hooks/useServices";
+import { Loader2, Wrench, Settings, Clock } from "lucide-react";
 
 export default function Services() {
   const SectionTitle = ({
@@ -82,6 +84,30 @@ export default function Services() {
     );
   };
 
+  const { services, categories, loading, error } = useServices();
+
+  // Group services by category ID and get the first 4 service names for display
+  const servicesByCategory = useMemo(() => {
+    return categories.map(category => {
+      const categoryServices = services
+        .filter(service => service.category_id === category.id)
+        .slice(0, 5) // Get first 4 services for the card
+        .map(service => service.name);
+      return {
+        ...category,
+        items: categoryServices,
+      };
+    });
+  }, [services, categories]);
+
+  // Map category names to icons
+  const getCategoryIcon = (categoryName: string) => {
+    const name = categoryName.toUpperCase();
+    if (name.includes('INSTALLATION')) return <Wrench className="w-5 h-5" />;
+    if (name.includes('REPAIRS')) return <Settings className="w-5 h-5" />;
+    return <Clock className="w-5 h-5" />; // Default icon
+  };
+
   return (
     <section id="services" className="py-14 bg-slate-50">
       <div className="max-w-7xl mx-auto px-6">
@@ -89,94 +115,29 @@ export default function Services() {
           title="Our Services"
           subtitle="Complete HVAC, electrical, and fire safety solutions for residential and commercial properties"
         />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          <Card
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6l4 2"
-                />
-              </svg>
-            }
-            title="INSTALLATION"
-            description="Expert installation for residential and commercial properties"
-            items={[
-              "Residential Air Conditioning Installation",
-              "Commercial Air Conditioning Installation",
-              "VRF (Variable Refrigerant Flow) System",
-              "All types of aircon system",
-            ]}
-            cta="Book Now"
-          />
-
-          <Card
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 7h10v10H7z"
-                />
-              </svg>
-            }
-            title="REPAIRS"
-            description="Complete repair and maintenance services"
-            items={[
-              "General Cleaning",
-              "Preventative Maintenance Programs",
-              "System Diagnostics",
-              "Spare Parts Replacement",
-            ]}
-            cta="Book Now"
-          />
-
-          <Card
-            icon={
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 11c0 1.657-1.343 3-3 3S6 12.657 6 11s1.343-3 3-3 3 1.343 3 3zm0 0c0 1.657 1.343 3 3 3s3-1.343 3-3-1.343-3-3-3-3 1.343-3 3z"
-                />
-              </svg>
-            }
-            title="OTHERS"
-            description="Specialized HVAC, ducting, and fire safety systems"
-            items={[
-              "HVAC Components Service",
-              "Ducting Installation & Repair",
-              "Chiller Services",
-              "FDAS (Fire Detection and Alarm System)",
-            ]}
-            cta="Book Now"
-          />
-        </div>
+        {loading && (
+          <div className="flex justify-center items-center p-8">
+            <Loader2 className="animate-spin text-slate-400" size={32} />
+            <p className="ml-4 text-slate-500">Loading services...</p>
+          </div>
+        )}
+        {error && !loading && (
+          <p className="text-center text-red-500">{error}</p>
+        )}
+        {!loading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {servicesByCategory.map((category) => (
+              <Card
+                key={category.id}
+                icon={getCategoryIcon(category.name)}
+                title={category.name.toUpperCase()}
+                description={category.description || `Explore our ${category.name} services.`}
+                items={category.items}
+                cta="Book Now"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -10,6 +10,7 @@ import BookingManagement from './BookingManagement';
 import ScheduleManagement from './ScheduleManagement';
 import ServiceManagement from './ServiceManagement';
 import ReportsAnalytics from './ReportsAnalytics';
+import SkillsManagement from './SkillsManagement';
 
 interface AdminDashboardClientProps {
   user: JwtPayload;
@@ -50,7 +51,8 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
     'Technicians',
     'Services',
     'Schedule',
-    'Reports'
+    'Skills',
+    'Reports',
   ];
 
   // Data should be fetched from an API
@@ -273,6 +275,8 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
       {activeTab === 'services' && <ServiceManagement />}
 
       {activeTab === 'schedule' && <ScheduleManagement />}
+
+      {activeTab === 'skills' && <SkillsManagement />}
 
       {activeTab === 'reports' && <ReportsAnalytics />}
     </div>

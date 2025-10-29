@@ -29,7 +29,7 @@ import { useState } from "react";
 import { useAuth } from "@/app/_shared/hooks/useAuth";
 // Custom hook that provides access to AuthContext (like setAccessToken)
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { http } from "@/app/_shared/services/axiosClient";
 
 // Custom hook to handle login logic
 export function useLogin() {
@@ -111,6 +111,22 @@ export function useLogin() {
 			setIsAuthenticated(true);
 			setUser(data.user); // Immediately update the user in the context
 
+			// Check for a pending cart item and process it
+			const pendingCartItemJSON = localStorage.getItem('pendingCartItem');
+			if (pendingCartItemJSON) {
+				try {
+					const pendingCartItem = JSON.parse(pendingCartItemJSON);
+					console.log('📦 Found pending cart item. Posting to cart...', pendingCartItem);
+					// The API endpoint for a customer's cart is typically namespaced under /api for frontend calls
+					// and the backend handles authentication.
+					await http.post('/customers/cart/items', pendingCartItem);
+					localStorage.removeItem('pendingCartItem');
+					console.log('✅ Pending cart item processed and removed from storage.');
+				} catch (cartError) {
+					console.error('❌ Failed to process pending cart item:', cartError);
+					// You might want to notify the user that adding the item failed.
+				}
+			}
 			// Debug: Log the user data and role
 			console.log('🔍 Login successful, user data:', data);
 			console.log('🔍 User role:', data.user.role);

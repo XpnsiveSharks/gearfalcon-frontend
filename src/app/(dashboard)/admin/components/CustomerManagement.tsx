@@ -1,24 +1,22 @@
 "use client";
 
 import React from 'react';
-import { Download, Plus, Eye, Edit, MessageSquare, Star } from 'lucide-react';
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  totalBookings: number;
-  totalSpent: number;
-  lastService: string;
-  rating: number;
-  status: 'active' | 'inactive';
-}
+import { Download, Plus, Eye, Edit, MessageSquare, Star, Loader2 } from 'lucide-react';
+import { useCustomers } from './Hooks/useCustomers';
 
 const CustomerManagement: React.FC = () => {
-  // This data should eventually be fetched from an API
-  const customers: Customer[] = [];
+  const { customers, loading, error } = useCustomers();
+
+  const getStatusColor = (status: 'active' | 'inactive') => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-700';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
 
   return (
     <div className="bg-gray-50">
@@ -39,25 +37,35 @@ const CustomerManagement: React.FC = () => {
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-18rem)]">
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-y-auto flex-1">
           <table className="w-full responsive-table">
             <thead className="bg-gray-50 border-b border-gray-100 hidden lg:table-header-group">
               <tr>
                 <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer</th>
                 <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Contact</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Bookings</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Total Spent</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Last Service</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Rating</th>
                 <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
                 <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 lg:divide-y-0">
-              {customers.length > 0 ? (
+              {loading ? (
+                <tr className="block lg:table-row">
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>
+                    <div className="flex justify-center items-center gap-2">
+                      <Loader2 className="animate-spin" size={20} />
+                      <span>Loading customers...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr className="block lg:table-row">
+                  <td className="p-4 lg:p-6 text-center text-red-500" colSpan={4}>
+                    {error}
+                  </td>
+                </tr>
+              ) : customers.length > 0 ? (
                 customers.map((customer) => (
                 <tr key={customer.id} className="block lg:table-row mb-4 lg:mb-0 border lg:border-0 rounded-lg lg:rounded-none hover:bg-gray-50 transition-colors">
                   <td className="p-4 block lg:table-cell" data-label="Customer">
@@ -72,26 +80,8 @@ const CustomerManagement: React.FC = () => {
                       <p className="text-xs text-gray-500">{customer.phone}</p>
                     </div>
                   </td>
-                  <td className="p-4 block lg:table-cell" data-label="Location">
-                    <span className="text-sm text-gray-900">{customer.location}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Total Bookings">
-                    <span className="text-sm font-medium text-gray-900">{customer.totalBookings}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Total Spent">
-                    <span className="text-sm font-medium text-gray-900">₱{customer.totalSpent.toLocaleString()}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Last Service">
-                    <span className="text-sm text-gray-900">{customer.lastService}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Rating">
-                    <div className="flex items-center gap-1">
-                      <Star size={16} className="text-yellow-400 fill-yellow-400" />
-                      <span className="text-sm font-medium text-gray-900">{customer.rating}</span>
-                    </div>
-                  </td>
                   <td className="p-4 block lg:table-cell" data-label="Status">
-                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
                       {customer.status}
                     </span>
                   </td>
@@ -106,7 +96,7 @@ const CustomerManagement: React.FC = () => {
               ))
               ) : (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={9}>No customers found.</td>
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>No customers found.</td>
                 </tr>
               )
             }
