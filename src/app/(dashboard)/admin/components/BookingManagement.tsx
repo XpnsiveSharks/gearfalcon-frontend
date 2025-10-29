@@ -1,203 +1,117 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Search, Filter, Download, Plus, Eye, Edit, MessageSquare } from 'lucide-react';
+import React from 'react';
+import { AlertTriangle, Briefcase, CheckCircle, Clock, MapPin, Phone, User, Wrench, Loader2 } from 'lucide-react';
+import { useJobs, Job } from './Hooks/useJobs';
 
-interface Booking {
-  id: string;
-  customer: string;
-  phone: string;
-  service: string;
-  location: string;
-  date: string;
-  time: string;
-  status: 'confirmed' | 'in-progress' | 'completed';
-  payment: 'paid' | 'partial' | 'pending';
-  amount: number;
-}
+const JobCard: React.FC<{ job: Job }> = ({ job }) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Not scheduled';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+      <div className="flex justify-between items-start">
+        <p className="text-sm font-bold text-gray-800">{job.serviceName}</p>
+        <span className="text-xs font-mono text-gray-500">#{job.id}</span>
+      </div>
+      <div className="space-y-2 text-xs text-gray-600">
+        <div className="flex items-center gap-2">
+          <User size={14} className="text-gray-400" />
+          <span>{job.customerName}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Phone size={14} className="text-gray-400" />
+          <span>{job.customerContact}</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin size={14} className="text-gray-400 mt-0.5" />
+          <span className="flex-1">{job.address}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-gray-400" />
+          <span>{formatDate(job.scheduledDate)}</span>
+        </div>
+        {job.technicianName && (
+          <div className="flex items-center gap-2">
+            <Wrench size={14} className="text-gray-400" />
+            <span className="font-medium">{job.technicianName}</span>
+          </div>
+        )}
+      </div>
+      {job.notes && (
+        <div className="text-xs text-gray-500 italic border-t border-gray-100 pt-2">
+          &quot;{job.notes}&quot;
+        </div>
+      )}
+    </div>
+  );
+};
+
+const JobColumn: React.FC<{ title: string; icon: React.ReactNode; jobs: Job[]; loading: boolean; error: string | null; }> = ({ title, icon, jobs, loading, error }) => (
+  <div className="bg-gray-100/60 rounded-2xl p-4 flex flex-col">
+    <div className="flex items-center gap-3 mb-4 px-2">
+      {icon}
+      <h2 className="text-base font-bold text-gray-800">{title}</h2>
+      <span className="text-sm font-semibold text-gray-500">{jobs.length}</span>
+    </div>
+    <div className="flex-1 space-y-4 overflow-y-auto pr-1">
+      {loading ? (
+        <div className="flex justify-center items-center h-32">
+          <Loader2 className="animate-spin text-gray-400" />
+        </div>
+      ) : error ? (
+        <div className="text-center text-red-500 text-sm p-4">{error}</div>
+      ) : jobs.length > 0 ? (
+        jobs.map(job => <JobCard key={`${title}-${job.id}`} job={job} />)
+      ) : (
+        <div className="text-center text-gray-500 text-sm p-4">No jobs found.</div>
+      )}
+    </div>
+  </div>
+);
 
 const BookingManagement: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // This data should eventually be fetched from an API
-  const bookings: Booking[] = [];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-700';
-      case 'in-progress':
-        return 'bg-purple-100 text-purple-700';
-      case 'completed':
-        return 'bg-green-100 text-green-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getPaymentColor = (payment: string) => {
-    switch (payment) {
-      case 'paid':
-        return 'bg-green-100 text-green-700';
-      case 'partial':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'pending':
-        return 'bg-orange-100 text-orange-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
+  const { emergencyJobs, takenJobs, availableJobs, loading, error } = useJobs();
 
   return (
     <div className="bg-gray-50">
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Booking Management</h1>
-        
-        <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-initial px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-            <Filter size={18} />
-            Filter
-          </button>
-          <button className="flex-1 md:flex-initial px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-            <Download size={18} />
-            Export
-          </button>
-          <button className="flex-1 md:flex-initial px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center justify-center gap-2">
-            <Plus size={18} />
-            New Booking
-          </button>
-        </div>
       </div>
 
-      {/* Table Container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-        {/* Search Bar */}
-        <div className="p-6 border-b border-gray-100">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search bookings..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full responsive-table">
-            <thead className="bg-gray-50 border-b border-gray-100 hidden lg:table-header-group">
-              <tr>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Booking ID</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date & Time</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Payment</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 lg:divide-y-0">
-              {bookings.length > 0 ? (
-                bookings.map((booking) => (
-                <tr key={booking.id} className="block lg:table-row mb-4 lg:mb-0 border lg:border-0 rounded-lg lg:rounded-none hover:bg-gray-50 transition-colors">
-                  <td className="p-4 block lg:table-cell" data-label="Booking ID">
-                    <span className="text-sm font-medium text-gray-900">{booking.id}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Customer">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{booking.customer}</p>
-                      <p className="text-xs text-gray-500">{booking.phone}</p>
-                    </div>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Service">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{booking.service}</p>
-                      <p className="text-xs text-gray-500">{booking.location}</p>
-                    </div>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Date & Time">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{booking.date}</p>
-                      <p className="text-xs text-gray-500">{booking.time}</p>
-                    </div>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Status">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Payment">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getPaymentColor(booking.payment)}`}>
-                      {booking.payment}
-                    </span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Amount">
-                    <span className="text-sm font-semibold text-gray-900">₱{booking.amount.toLocaleString()}</span>
-                  </td>
-                  <td className="p-4 block lg:table-cell" data-label="Actions">
-                    <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="View"><Eye size={18} className="text-gray-600" /></button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Edit"><Edit size={18} className="text-gray-600" /></button>
-                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Message"><MessageSquare size={18} className="text-gray-600" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-              ) : (
-                <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={8}>No bookings found.</td>
-                </tr>
-              )
-            }
-            </tbody>
-          </table>
+      {/* Job Columns */}
+      <div className="overflow-x-auto pb-4">
+        <div className="grid grid-flow-col auto-cols-[minmax(300px,1fr)] lg:auto-cols-fr lg:grid-flow-row lg:grid-cols-3 gap-6 h-[calc(100vh-18rem)]">
+          <JobColumn 
+            title="Emergency Jobs" 
+            icon={<AlertTriangle className="text-red-500" />} 
+            jobs={emergencyJobs} 
+            loading={loading.emergency} 
+            error={error.emergency} 
+          />
+          <JobColumn 
+            title="Taken Jobs" 
+            icon={<CheckCircle className="text-blue-500" />} 
+            jobs={takenJobs} 
+            loading={loading.taken} 
+            error={error.taken} 
+          />
+          <JobColumn 
+            title="Available Jobs" 
+            icon={<Briefcase className="text-green-500" />} 
+            jobs={availableJobs} 
+            loading={loading.available} 
+            error={error.available} 
+          />
         </div>
       </div>
     </div>
-    
   );
 };
 
 export default BookingManagement;
-
-/* CSS for responsive table */
-const styles = `
-  @media (max-width: 1023px) {
-    .responsive-table td {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #f3f4f6;
-      padding-left: 50%;
-      position: relative;
-    }
-    .responsive-table td:before {
-      content: attr(data-label);
-      position: absolute;
-      left: 1rem;
-      width: 45%;
-      padding-right: 0.5rem;
-      white-space: nowrap;
-      font-weight: 600;
-      color: #4b5563;
-      font-size: 0.75rem;
-      line-height: 1rem;
-    }
-    .responsive-table tr:last-child td:last-child {
-      border-bottom: 0;
-    }
-  }
-`;
-
-// Inject styles into the head
-if (typeof window !== 'undefined') {
-  const styleSheet = document.createElement("style");
-  styleSheet.type = "text/css";
-  styleSheet.innerText = styles;
-  document.head.appendChild(styleSheet);
-}

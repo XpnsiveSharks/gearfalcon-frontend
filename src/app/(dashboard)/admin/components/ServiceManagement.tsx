@@ -17,7 +17,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 px-4">
+    <div className="fixed inset-0 flex justify-center items-center z-50 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-800">{title}</h3>
@@ -179,6 +179,7 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({ isOpen, onClose, on
 
 const ServiceManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('');
   const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
   const [isServiceModalOpen, setServiceModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
@@ -193,10 +194,13 @@ const ServiceManagement: React.FC = () => {
   const categoryMap = new Map(categories.map(c => [c.id, c.name]));
 
   const filteredServices = services.filter(service => {
+    const categoryMatch = selectedCategoryFilter ? String(service.category_id) === selectedCategoryFilter : true;
+    if (!categoryMatch) return false;
+
     const categoryName = categoryMap.get(service.category_id) || '';
     const searchTerm = searchQuery.toLowerCase();
-    return service.name.toLowerCase().includes(searchTerm) ||
-           categoryName.toLowerCase().includes(searchTerm) ||
+    return service.name.toLowerCase().includes(searchTerm) || // Search by service name
+           categoryName.toLowerCase().includes(searchTerm) || // Search by category name
            String(service.id).toLowerCase().includes(searchTerm);
   });
 
@@ -265,15 +269,25 @@ const ServiceManagement: React.FC = () => {
       
       {/* Combined Search and Add Buttons */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
-        <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search services or categories..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:flex-1">
+          <div className="relative w-full md:max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search services or categories..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <select
+            value={selectedCategoryFilter}
+            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+            className="w-full md:w-auto px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Categories</option>
+            {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+          </select>
         </div>
         <div className="flex items-center gap-4 w-full md:w-auto">
           <button onClick={() => { setEditingCategory(null); setCategoryModalOpen(true); }} className="w-full md:w-auto justify-center px-4 py-2 bg-blue-500 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
@@ -288,9 +302,9 @@ const ServiceManagement: React.FC = () => {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Service Categories Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
           <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Service Categories</h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-y-auto flex-1 pr-2">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
@@ -306,8 +320,8 @@ const ServiceManagement: React.FC = () => {
                 ) : filteredCategories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-gray-50">
                     <td className="p-4">
-                      <p className="font-medium">{cat.name}</p>
-                      <p className="text-sm text-gray-500">{cat.description || 'No description'}</p>
+                      <p className="font-medium break-words">{cat.name}</p>
+                      <p className="text-sm text-gray-500 break-words">{cat.description || 'No description'}</p>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -323,9 +337,9 @@ const ServiceManagement: React.FC = () => {
         </div>
 
         {/* Service Management Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
           <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Services</h2>
-          <div className="overflow-x-auto">
+          <div className="overflow-y-auto flex-1 pr-2">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
@@ -342,8 +356,8 @@ const ServiceManagement: React.FC = () => {
                 ) : filteredServices.map((srv) => (
                   <tr key={srv.id} className="hover:bg-gray-50">
                     <td className="p-4">
-                      <p className="font-medium">{srv.name}</p>
-                      <p className="text-sm text-gray-500">{categoryMap.get(srv.category_id) || 'Uncategorized'}</p>
+                      <p className="font-medium break-words">{srv.name}</p>
+                      <p className="text-sm text-gray-500 break-words">{categoryMap.get(srv.category_id) || 'Uncategorized'}</p>
                     </td>
                     <td className="p-4 font-medium">₱{srv.base_price ? parseFloat(srv.base_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
                     <td className="p-4">
