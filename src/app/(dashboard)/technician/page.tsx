@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { AlertCircle, Calendar, Clock, Star, Phone, MessageSquare, Navigation, MapPin, User, Loader2, Award, Briefcase, Mail, Edit, BriefcaseBusiness, FileText } from 'lucide-react';
 import { useTechnicianJobs } from './hooks/useTechnicianJobs';
-import { useTechnicianProfile, TechnicianProfile } from './hooks/useTechnicianProfile';
 import { useAvailableJobs, AvailableJob } from './hooks/useAvailableJobs';
 import { useRouter } from 'next/navigation';
 
@@ -24,6 +23,11 @@ interface Job {
   isEmergency?: boolean;
 }
 
+// Moved to a separate file, but keeping imports here for other components on this page
+import { useTechnicianProfile } from './hooks/useTechnicianProfile';
+import { validatePasswordStrength } from '@/app/_shared/lib/validators/passwordValidator';
+import PasswordStrengthIndicator from '@/app/_shared/components/PasswordStrengthIndicator';
+
 const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactNode }> = ({ icon, label, value }) => (
   <div className="flex items-start gap-3">
     <div className="text-gray-400 mt-1">{icon}</div>
@@ -35,7 +39,7 @@ const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: React.
 );
 
 const ProfileView: React.FC = () => {
-  const { profile, loading, error } = useTechnicianProfile();
+  const { profile, loading, error, changePassword } = useTechnicianProfile();
   const router = useRouter();
 
   if (loading) {
@@ -65,30 +69,101 @@ const ProfileView: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
+            <p className="text-gray-500">Technician Profile</p>
+          </div>
+          <button onClick={() => router.push('/technician/settings')} className="px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center gap-2">
+            <Edit size={16} />
+            Edit Profile
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-8">
+          <DetailItem icon={<Mail size={16} />} label="Email" value={profile.email} />
+          <DetailItem icon={<Phone size={16} />} label="Phone" value={profile.phone} />
+          <DetailItem icon={<Star size={16} />} label="Specialization" value={profile.specialization} />
+          <DetailItem icon={<Award size={16} />} label="Certification" value={profile.certification} />
+          <DetailItem icon={<Briefcase size={16} />} label="Experience" value={profile.experience_years ? `${profile.experience_years} years` : null} />
+        </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{profile.name}</h2>
-          <p className="text-gray-500">Technician Profile</p>
+          <p className="text-sm font-semibold text-gray-700 mb-3 mt-8">Skills</p>
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.length > 0 ? profile.skills.map((skill, index) => <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">{skill.name}</span>) : <p className="text-sm text-gray-400">No skills assigned.</p>}
+          </div>
         </div>
-        <button onClick={() => router.push('/technician/settings')} className="px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center gap-2">
-          <Edit size={16} />
-          Edit Profile
+      </div>
+      <ChangePasswordView changePassword={changePassword} />
+    </div>
+  );
+};
+
+const ChangePasswordView: React.FC<{ changePassword: Function }> = ({ changePassword }) => {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (newPassword !== confirmPassword) {
+      setError("New passwords do not match.");
+      return;
+    }
+    const validationResult = validatePasswordStrength(newPassword);
+    if (!validationResult.isValid) {
+      setError("New password does not meet the strength requirements.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await changePassword({
+        old_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword,
+      });
+
+      setSuccess("Password changed successfully!");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError((err as any).message || 'An unexpected error occurred.');
+      console.error("Change password error:", err);
+    }
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-6">Change Password</h2>
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <div>
+          <label className="text-sm text-gray-600 block mb-1">Current Password</label>
+          <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required />
+        </div>
+        <div>
+          <PasswordStrengthIndicator password={newPassword} onPasswordChange={setNewPassword} label="New Password" userType="technician" required />
+        </div>
+        <div>
+          <label className="text-sm text-gray-600 block mb-1">Confirm New Password</label>
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {success && <p className="text-sm text-green-600">{success}</p>}
+        <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors disabled:bg-gray-400 flex items-center">
+          {isSubmitting && <Loader2 size={16} className="animate-spin mr-2" />}
+          {isSubmitting ? 'Updating...' : 'Update Password'}
         </button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-        <DetailItem icon={<Mail size={16} />} label="Email" value={profile.email} />
-        <DetailItem icon={<Phone size={16} />} label="Phone" value={profile.phone} />
-        <DetailItem icon={<Star size={16} />} label="Specialization" value={profile.specialization} />
-        <DetailItem icon={<Award size={16} />} label="Certification" value={profile.certification} />
-        <DetailItem icon={<Briefcase size={16} />} label="Experience" value={profile.experience_years ? `${profile.experience_years} years` : null} />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-gray-700 mb-3">Skills</p>
-        <div className="flex flex-wrap gap-2">
-          {profile.skills.length > 0 ? profile.skills.map((skill, index) => <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">{skill.name}</span>) : <p className="text-sm text-gray-400">No skills assigned.</p>}
-        </div>
-      </div>
+      </form>
     </div>
   );
 };

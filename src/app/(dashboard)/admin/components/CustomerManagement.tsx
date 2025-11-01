@@ -1,11 +1,31 @@
 "use client";
 
-import React from 'react';
-import { Download, Plus, Eye, Edit, MessageSquare, Star, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Plus, Eye, Edit, MessageSquare, Loader2, X } from 'lucide-react';
 import { useCustomers } from './Hooks/useCustomers';
 
+// A simple, reusable Modal component
+const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 flex justify-center items-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
+            <X size={20} className="text-gray-600" />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
 const CustomerManagement: React.FC = () => {
-  const { customers, loading, error } = useCustomers();
+  const { customers, loading, error, customerDetails, detailsLoading, detailsError, fetchCustomerById } = useCustomers();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getStatusColor = (status: 'active' | 'inactive') => {
     switch (status) {
@@ -16,6 +36,11 @@ const CustomerManagement: React.FC = () => {
       default:
         return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const handleViewClick = (id: string) => {
+    fetchCustomerById(id);
+    setIsModalOpen(true);
   };
 
   return (
@@ -87,7 +112,7 @@ const CustomerManagement: React.FC = () => {
                   </td>
                   <td className="p-4 block lg:table-cell" data-label="Actions">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="View"><Eye size={18} className="text-gray-600" /></button>
+                      <button onClick={() => handleViewClick(customer.id)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="View"><Eye size={18} className="text-gray-600" /></button>
                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Edit"><Edit size={18} className="text-gray-600" /></button>
                       <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Message"><MessageSquare size={18} className="text-gray-600" /></button>
                     </div>
@@ -104,6 +129,40 @@ const CustomerManagement: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* View Customer Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Customer Details">
+        {detailsLoading ? (
+          <div className="flex justify-center items-center gap-2 p-8">
+            <Loader2 className="animate-spin" size={24} />
+            <span className="text-gray-600">Loading details...</span>
+          </div>
+        ) : customerDetails ? (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Name</p>
+                <p className="text-md font-medium text-gray-900">{customerDetails.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="text-md font-medium text-gray-900">{customerDetails.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Phone</p>
+                <p className="text-md font-medium text-gray-900">{customerDetails.phone || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Address</p>
+                <p className="text-md font-medium text-gray-900">{customerDetails.location || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-md font-medium text-gray-900 capitalize">{customerDetails.status}</p>
+              </div>
+            </div>
+        ) : <p className="text-red-500 text-center p-8">{detailsError || 'Could not load customer details.'}</p>
+        }
+      </Modal>
     </div>
   );
 };

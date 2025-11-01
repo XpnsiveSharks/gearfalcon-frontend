@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { http } from '@/app/_shared/services/axiosClient';
+import { http, axiosUtils } from '@/app/_shared/services/axiosClient';
 import { useAuth } from '@/app/_shared/hooks/useAuth';
 
 export interface TechnicianProfile {
+  id: string;
   name: string;
   email: string;
   phone: string | null;
@@ -12,6 +13,12 @@ export interface TechnicianProfile {
   certification: string | null;
   experience_years: number | null;
   skills: { name: string }[];
+}
+
+interface ChangePasswordData {
+  old_password: string;
+  new_password: string;
+  new_password_confirmation: string;
 }
 
 export const useTechnicianProfile = () => {
@@ -35,6 +42,7 @@ export const useTechnicianProfile = () => {
       const techData = response.data.technician;
 
       setProfile({
+        id: techData.user.id,
         name: techData.user.name,
         email: techData.user.email,
         phone: techData.user.phone,
@@ -55,5 +63,18 @@ export const useTechnicianProfile = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  return { profile, loading, error, refetch: fetchProfile };
+  const changePassword = useCallback(async (passwordData: ChangePasswordData) => {
+    if (!profile?.id) {
+      throw new Error("Technician profile not loaded. Cannot change password.");
+    }
+    try {
+      // The API endpoint for technicians to change their own password
+      return await http.put(`/customers/change-password/${profile.id}`, passwordData);
+    } catch (err) {
+      // Re-throw a more user-friendly error message from the API response
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  }, [profile?.id]);
+
+  return { profile, loading, error, refetch: fetchProfile, changePassword };
 };
