@@ -11,6 +11,7 @@ interface TechnicianDetails {
   specialization: string | null;
   certification: string | null;
   experience_years: number | null;
+  contact: string | null;
 }
 
 // Interface for the main user object from the API, which includes technician details
@@ -26,6 +27,7 @@ interface ApiTechnician {
 // Interface for the data structure the component will use
 export interface Technician {
   id: string;
+  technicianId: number;
   name: string;
   email: string;
   phone: string;
@@ -56,9 +58,10 @@ export function useTechnicians() {
       const apiTechnicians: ApiTechnician[] = response.data || [];
       const formattedTechnicians: Technician[] = apiTechnicians.map(tech => ({
         id: tech.id,
+        technicianId: tech.technician.id,
         name: tech.name,
         email: tech.email,
-        phone: tech.phone || 'N/A',
+        phone: tech.technician.contact || 'N/A',
         specialties: tech.technician.specialization?.split(',').map(s => s.trim()) || [],
         certification: tech.technician.certification || 'N/A',
         experience: tech.technician.experience_years || 0,

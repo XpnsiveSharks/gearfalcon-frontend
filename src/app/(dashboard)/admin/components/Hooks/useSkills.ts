@@ -16,6 +16,17 @@ export interface Skill {
   description: string;
 }
 
+export interface AddSkillData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateSkillData {
+  name?: string;
+  description?: string;
+}
+
+
 export function useSkills() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +65,48 @@ export function useSkills() {
     }
   }, [isAuthLoading, fetchSkills]);
 
+  const addSkill = async (skillData: AddSkillData) => {
+    if (!isAuthenticated) throw new Error("User is not authenticated.");
+    try {
+      const response = await http.post(API_URL, skillData);
+      const newSkill: ApiSkill = response.data;
+      setSkills(prev => [...prev, {
+        id: newSkill.id,
+        name: newSkill.name,
+        description: newSkill.description || 'No description provided.'
+      }]);
+    } catch (err) {
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  };
+
+  const updateSkill = async (id: number, skillData: UpdateSkillData) => {
+    if (!isAuthenticated) throw new Error("User is not authenticated.");
+    try {
+      await http.put(`${API_URL}/${id}`, skillData);
+      setSkills(prev => prev.map(s => s.id === id ? { ...s, ...skillData, description: skillData.description || s.description } : s));
+    } catch (err) {
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  };
+
+  const deleteSkill = async (id: number) => {
+    if (!isAuthenticated) throw new Error("User is not authenticated.");
+    try {
+      await http.delete(`${API_URL}/${id}`);
+      setSkills(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  };
+
   return {
     skills,
     loading,
     error,
     fetchSkills,
+    addSkill,
+    updateSkill,
+    deleteSkill,
   };
 }

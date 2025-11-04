@@ -1,13 +1,15 @@
 "use client";
 
 import React from 'react';
-import { Loader2, X, User, Phone, Wrench, Tag, FileText } from 'lucide-react';
+import { Loader2, X, User, Phone, Wrench, Tag, FileText, CheckCircle } from 'lucide-react';
 import { useJobTechnician } from '../hooks/useJobTechnician';
+import { useCompleteJob } from '../hooks/useCompleteJob';
 
 interface JobDetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     job: any;
+    onJobCompleted: () => void;
 }
 
 const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: React.ReactNode }> = ({ icon, label, value }) => (
@@ -20,12 +22,22 @@ const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: React.
     </div>
 );
 
-const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, job }) => {
+const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, job, onJobCompleted }) => {
     const { technician, loading: techLoading, error: techError } = useJobTechnician(isOpen ? job?.id : null);
+    const { completeJob, isCompleting } = useCompleteJob();
 
     if (!isOpen) {
         return null;
     }
+
+    const handleCompleteJob = async () => {
+        if (!job?.id) return;
+        const success = await completeJob(job.id);
+        if (success) {
+            onJobCompleted();
+            onClose();
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-30 backdrop-blur-sm z-50 flex justify-center items-center p-4">
@@ -79,6 +91,17 @@ const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ isOpen, onClose, job 
                     <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200">
                         Close
                     </button>
+                    {job?.status?.toLowerCase() === 'claimed' && (
+                        <button
+                            type="button"
+                            onClick={handleCompleteJob}
+                            disabled={isCompleting}
+                            className="px-6 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-green-300 flex items-center gap-2"
+                        >
+                            {isCompleting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                            {isCompleting ? 'Completing...' : 'Complete Job'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

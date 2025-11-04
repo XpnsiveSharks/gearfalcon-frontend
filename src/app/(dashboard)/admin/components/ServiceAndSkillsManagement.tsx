@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Eye, Edit, Search, Trash2, Loader2, X } from 'lucide-react';
+import { Plus, Eye, Edit, Search, Trash2, Loader2, X, Wrench } from 'lucide-react';
 import { useServiceCategories, ServiceCategory, AddCategoryData, UpdateCategoryData, Service, AddServiceData, UpdateServiceData } from './Hooks/useServiceCategories';
+import { useSkills, Skill } from './Hooks/useSkills';
 
 // Re-usable Modal Component
 interface ModalProps {
@@ -177,19 +178,84 @@ const ServiceFormModal: React.FC<ServiceFormModalProps> = ({ isOpen, onClose, on
   );
 };
 
-const ServiceManagement: React.FC = () => {
+// Add/Edit Skill Modal
+interface SkillFormModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (data: any) => Promise<void>;
+    isLoading: boolean;
+    skill?: Skill | null;
+}
+
+const SkillFormModal: React.FC<SkillFormModalProps> = ({ isOpen, onClose, onSubmit, isLoading, skill }) => {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setName(skill ? skill.name : '');
+            setDescription(skill ? skill.description || '' : '');
+        } else {
+            setName('');
+            setDescription('');
+        }
+    }, [isOpen, skill]);
+
+    const handleSubmit = () => {
+        if (!name.trim()) {
+            alert('Skill name is required.');
+            return;
+        }
+        onSubmit(skill ? { id: skill.id, data: { name, description } } : { name, description });
+    };
+
+    return (
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={skill ? 'Edit Skill' : 'Add New Skill'}
+            footer={
+                <>
+                    <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button onClick={handleSubmit} disabled={isLoading} className="px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        {isLoading ? <><Loader2 size={18} className="animate-spin" /><span>{skill ? 'Updating...' : 'Adding...'}</span></> : (skill ? 'Update Skill' : 'Add Skill')}
+                    </button>
+                </>
+            }
+        >
+            <div>
+                <label htmlFor="skill-name" className="block text-sm font-medium text-gray-700 mb-1">Skill Name <span className="text-red-500">*</span></label>
+                <input id="skill-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+            </div>
+            <div>
+                <label htmlFor="skill-description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea id="skill-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+        </Modal>
+    );
+};
+
+
+const ServiceAndSkillsManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('');
   const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
   const [isServiceModalOpen, setServiceModalOpen] = useState(false);
+  const [isSkillModalOpen, setSkillModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     categories, loading: categoriesLoading, error: categoriesError, addCategory, updateCategory, deleteCategory,
     services, servicesLoading, servicesError, addService, updateService, deleteService
   } = useServiceCategories();
+
+  const { skills, loading: skillsLoading, error: skillsError, addSkill, updateSkill, deleteSkill } = useSkills();
+
 
   const categoryMap = new Map(categories.map(c => [c.id, c.name]));
 
@@ -208,6 +274,11 @@ const ServiceManagement: React.FC = () => {
     category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const filteredSkills = skills.filter(skill =>
+    skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (skill.description && skill.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
   const handleCategorySubmit = async (data: any) => {
     setIsSubmitting(true);
@@ -243,6 +314,23 @@ const ServiceManagement: React.FC = () => {
     }
   };
 
+  const handleSkillSubmit = async (data: any) => {
+    setIsSubmitting(true);
+    try {
+        if (data.id) {
+            await updateSkill(data.id, data.data);
+        } else {
+            await addSkill(data);
+        }
+        setSkillModalOpen(false);
+        setEditingSkill(null);
+    } catch (error) {
+        alert(`Error: Could not save the skill.`);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteCategory = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
@@ -263,9 +351,19 @@ const ServiceManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteSkill = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this skill?')) {
+        try {
+            await deleteSkill(id);
+        } catch (error) {
+            alert('Error: Could not delete the skill.');
+        }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Service & Category Management</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Services, Categories and Skills Management</h1>
       
       {/* Combined Search and Add Buttons */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
@@ -274,7 +372,7 @@ const ServiceManagement: React.FC = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Search services or categories..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -296,11 +394,14 @@ const ServiceManagement: React.FC = () => {
           <button onClick={() => { setEditingService(null); setServiceModalOpen(true); }} className="w-full md:w-auto justify-center px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center gap-2">
             <Plus size={18} /> Add Service
           </button>
+          <button onClick={() => { setEditingSkill(null); setSkillModalOpen(true); }} className="w-full md:w-auto justify-center px-4 py-2 bg-green-500 text-white text-sm font-bold rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+            <Plus size={18} /> Add Skill
+          </button>
         </div>
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Service Categories Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
           <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Service Categories</h2>
@@ -372,13 +473,49 @@ const ServiceManagement: React.FC = () => {
             </table>
           </div>
         </div>
+
+        {/* Skills Management Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
+            <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Skills</h2>
+            <div className="overflow-y-auto flex-1 pr-2">
+                <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Skill</th>
+                            <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {skillsLoading ? (
+                            <tr><td colSpan={2} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
+                        ) : skillsError ? (
+                            <tr><td colSpan={2} className="p-6 text-center text-red-500">{skillsError}</td></tr>
+                        ) : filteredSkills.map((skill) => (
+                            <tr key={skill.id} className="hover:bg-gray-50">
+                                <td className="p-4">
+                                    <p className="font-medium break-words">{skill.name}</p>
+                                    <p className="text-sm text-gray-500 break-words">{skill.description || 'No description'}</p>
+                                </td>
+                                <td className="p-4">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => { setEditingSkill(skill); setSkillModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                                        <button onClick={() => handleDeleteSkill(skill.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
       </div>
 
       {/* Modals */}
       <CategoryFormModal isOpen={isCategoryModalOpen} onClose={() => setCategoryModalOpen(false)} onSubmit={handleCategorySubmit} isLoading={isSubmitting} category={editingCategory} />
       <ServiceFormModal isOpen={isServiceModalOpen} onClose={() => setServiceModalOpen(false)} onSubmit={handleServiceSubmit} isLoading={isSubmitting} service={editingService} categories={categories} />
+      <SkillFormModal isOpen={isSkillModalOpen} onClose={() => setSkillModalOpen(false)} onSubmit={handleSkillSubmit} isLoading={isSubmitting} skill={editingSkill} />
     </div>
   );
 };
 
-export default ServiceManagement;
+export default ServiceAndSkillsManagement;

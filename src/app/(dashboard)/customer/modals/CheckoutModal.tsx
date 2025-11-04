@@ -14,6 +14,7 @@ interface CheckoutModalProps {
 const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, customer, totalAmount }) => {
     const [scheduledDate, setScheduledDate] = useState('');
     const { createCheckoutSource, isCheckingOut, error } = useCheckout();
+    const [isConfirmationOpen, setConfirmationOpen] = useState(false);
 
     if (!isOpen) {
         return null;
@@ -34,7 +35,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, customer
         if (!customer?.address?.address_id || !scheduledDate) {
             return;
         }
-        createCheckoutSource(customer.address.address_id, scheduledDate);
+
+        setConfirmationOpen(true);
     };
 
     const serviceAddress = [
@@ -46,6 +48,40 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, customer
     ].filter(Boolean).join(', ');
 
     return (
+        <>
+            {isConfirmationOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex justify-center items-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg">
+                        <div className="flex items-start gap-5">
+                            <AlertTriangle className="text-yellow-400 mt-1" size={60} />
+                            <div>
+                                <h4 className="text-xl font-bold text-red-800">Are you sure you want to proceed?</h4>
+                                <p className="text-lg text-gray-600 mt-2">
+                                    By clicking "Proceed", you will be redirected to the payment page to complete your booking.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-4 mt-6">
+                            <button
+                                onClick={() => setConfirmationOpen(false)}
+                                className="px-6 py-2.5 bg-gray-200 text-gray-800 text-base font-semibold rounded-lg hover:bg-gray-300"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={() => { 
+                                    createCheckoutSource(customer.address.address_id, scheduledDate);
+                                    setConfirmationOpen(false);
+                                }} 
+                                className="px-6 py-2.5 bg-green-600 text-white text-base font-semibold rounded-lg hover:bg-green-700"
+                            >
+                                Proceed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
                 <div className="flex justify-between items-center p-6 border-b">
@@ -99,6 +135,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, customer
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

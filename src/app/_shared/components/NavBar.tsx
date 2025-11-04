@@ -6,16 +6,16 @@ import { useAuth } from "@/app/_shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 const NavBar = () => {
-    const [isOpen, setIsOpen] = useState(false);
-    const { isAuthenticated, logout, isLoading, user } = useAuth();
-    const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, logout, isLoading, user } = useAuth();
+  const router = useRouter();
 
-    // Debug authentication state changes
-    console.log('🔄 Navbar auth state:', {
-        isAuthenticated,
-        isLoading,
-        user: user ? { role: user.role, email: user.email } : null
-    });
+  // Debug authentication state changes
+  console.log('🔄 Navbar auth state:', {
+    isAuthenticated,
+    isLoading,
+    user: user ? { role: user.role, email: user.email } : null
+  });
 
   // Get user information from auth context (no token decoding needed)
   const userInfo = {
@@ -54,6 +54,11 @@ const NavBar = () => {
     return "/";
   };
 
+  // Function to close the mobile menu
+  const closeMobileMenu = () => {
+    setIsOpen(false);
+  };
+
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-slate-100 text-slate-900 shadow-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -67,28 +72,34 @@ const NavBar = () => {
           {/* Desktop menu */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             {/* Show public links only for non-authenticated users */}
-            {!isAuthenticated && (
-              <>
-                <Link href="/pricing" className="hover:opacity-80 transition-opacity">
-                  Pricing
-                </Link>
-                <Link href="/#services" className="hover:opacity-80 transition-opacity">
-                  Our Services
-                </Link>
-                <Link href="/about" className="hover:opacity-80 transition-opacity">
-                  About
-                </Link>
-                <Link href="/contact" className="hover:opacity-80 transition-opacity">
-                  Contact
-                </Link>
-              </>
-            )}
+
+            <>
+              <Link href="/booking" className="hover:opacity-80 transition-opacity">
+                Our Services
+              </Link>
+              <Link href="/about" className="hover:opacity-80 transition-opacity">
+                About
+              </Link>
+              <Link href="/contact" className="hover:opacity-80 transition-opacity">
+                Contact
+              </Link>
+            </>
 
             {/* Dynamic Auth Section */}
             {isLoading ? (
               <div className="w-32 h-8 bg-slate-200 animate-pulse rounded"></div>
             ) : isAuthenticated ? (
+
               <div className="flex items-center space-x-4">
+
+                {/* Dashboard Link */}
+                <Link
+                  href={getDashboardLink()}
+                  className="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Dashboard
+                </Link>
+
                 {/* User Info */}
                 <div className="text-sm text-slate-600">
                   <span className="font-medium">{userInfo?.name || userInfo?.email}</span>
@@ -98,14 +109,6 @@ const NavBar = () => {
                     </span>
                   )}
                 </div>
-
-                {/* Dashboard Link */}
-                <Link
-                  href={getDashboardLink()}
-                  className="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Dashboard
-                </Link>
 
                 {/* Logout Button */}
                 <button
@@ -164,31 +167,8 @@ const NavBar = () => {
       {isOpen && (
         <div className="md:hidden border-t border-slate-200">
           <div className="space-y-1 px-4 py-3">
-            {/* Show public links only for non-authenticated users */}
-            {!isAuthenticated && (
-              <>
-                <Link href="/pricing" className="block py-2 hover:opacity-80">
-                  Pricing
-                </Link>
-                <Link href="/#services" className="block py-2 hover:opacity-80">
-                  Our Services
-                </Link>
-                <Link href="/about" className="block py-2 hover:opacity-80">
-                  About
-                </Link>
-                <Link href="/contact" className="block py-2 hover:opacity-80">
-                  Contact
-                </Link>
-              </>
-            )}
-
-            {/* Dynamic Mobile Auth */}
-            {isLoading ? (
-              <div className="w-full h-8 bg-slate-200 animate-pulse rounded"></div>
-            ) : isAuthenticated ? (
-              <>
-                {/* User Info in Mobile */}
-                <div className="py-2 text-sm text-slate-600 border-b border-slate-200">
+             {/* User Info in Mobile */}
+                <div className="py-2 text-sm text-slate-600 border-b border-slate-200 text-center">
                   <div className="font-medium">{userInfo?.name || userInfo?.email}</div>
                   {userInfo?.role && (
                     <span className="inline-block mt-1 px-2 py-1 bg-slate-200 rounded text-xs uppercase">
@@ -196,22 +176,46 @@ const NavBar = () => {
                     </span>
                   )}
                 </div>
-
+            {/* Show public links only for non-authenticated users */}
+            <>
+              <Link href="/booking" onClick={closeMobileMenu} className="block py-3 bg-slate-200 hover:bg-slate-300 rounded-md text-center font-medium mt-2">
+                Our Services
+              </Link>
+              <Link href="/about" onClick={closeMobileMenu} className="block py-3 bg-slate-200 hover:bg-slate-300 rounded-md text-center font-medium mt-2">
+                About
+              </Link>
+              <Link href="/contact" onClick={closeMobileMenu} className="block py-3 bg-slate-200 hover:bg-slate-300 rounded-md text-center font-medium mt-2">
+                Contact
+              </Link>
+            </>
+            {/* Dynamic Mobile Auth */}
+            {isLoading ? (
+              <div className="w-full h-8 bg-slate-200 animate-pulse rounded"></div>
+            ) : isAuthenticated ? (
+              <>
+                
                 <Link
+                  onClick={closeMobileMenu}
                   href={getDashboardLink()}
                   className="block py-3 bg-slate-200 hover:bg-slate-300 rounded-md text-center font-medium mt-2"
                 >
                   Dashboard
                 </Link>
+
+             
+
                 <button
-                  onClick={handleLogout}
+                  onClick={() => {
+                    handleLogout();
+                    closeMobileMenu();
+                  }}
                   className="block w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-md font-medium mt-2 transition-colors"
                 >
                   Logout
                 </button>
               </>
             ) : (
-              <Link href="/login" className="block w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium text-center mt-2 transition-colors">
+              <Link href="/login" onClick={closeMobileMenu} className="block w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-md font-medium text-center mt-2 transition-colors">
                 Login
               </Link>
             )}

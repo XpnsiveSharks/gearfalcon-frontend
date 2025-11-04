@@ -6,6 +6,7 @@ import { useAuth } from '@/app/_shared/hooks/useAuth';
 
 export interface TechnicianProfile {
   id: string;
+  technician_id: number;
   name: string;
   email: string;
   phone: string | null;
@@ -13,6 +14,13 @@ export interface TechnicianProfile {
   certification: string | null;
   experience_years: number | null;
   skills: { name: string }[];
+}
+
+export interface UpdateProfileData {
+  contact?: string | null;
+  specialization?: string | null;
+  experience_years?: number | null;
+  certification?: string | null;
 }
 
 interface ChangePasswordData {
@@ -43,9 +51,10 @@ export const useTechnicianProfile = () => {
 
       setProfile({
         id: techData.user.id,
+        technician_id: techData.id,
         name: techData.user.name,
         email: techData.user.email,
-        phone: techData.user.phone,
+        phone: techData.contact,
         specialization: techData.specialization,
         certification: techData.certification,
         experience_years: techData.experience_years,
@@ -63,6 +72,20 @@ export const useTechnicianProfile = () => {
     fetchProfile();
   }, [fetchProfile]);
 
+  const updateProfile = useCallback(async (data: UpdateProfileData) => {
+    if (!profile?.technician_id) {
+      throw new Error("Technician profile not loaded. Cannot update profile.");
+    }
+    try {
+      const response = await http.put(`/technicians/${profile.technician_id}`, data);
+      // After successful update, refetch the profile to get the latest data
+      await fetchProfile();
+      return response.data;
+    } catch (err) {
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  }, [profile?.technician_id, fetchProfile]);
+
   const changePassword = useCallback(async (passwordData: ChangePasswordData) => {
     if (!profile?.id) {
       throw new Error("Technician profile not loaded. Cannot change password.");
@@ -76,5 +99,5 @@ export const useTechnicianProfile = () => {
     }
   }, [profile?.id]);
 
-  return { profile, loading, error, refetch: fetchProfile, changePassword };
+  return { profile, loading, error, refetch: fetchProfile, changePassword, updateProfile };
 };

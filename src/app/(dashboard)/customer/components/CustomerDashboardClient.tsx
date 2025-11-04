@@ -1,12 +1,15 @@
 "use client";
 
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
 import React, { useState, useMemo, useCallback, FC } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, CheckCircle, CreditCard, Loader2, Wrench, Package } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, CreditCard, Loader2, Wrench, Package, AlertTriangle } from 'lucide-react';
 import { JwtPayload } from "@/app/_shared/lib/jwt";
 import { useCustomerInfo } from '../hooks/useCustomerInfo';
 import { useCustomerJobs } from '../hooks/useCustomerJobs';
 import { useCustomerChangePassword } from '../hooks/useCustomerChangePassword';
+import { useCancelJob } from '../hooks/useCancelJob';
 import PasswordStrengthIndicator from '@/app/_shared/components/PasswordStrengthIndicator';
 import { useCart } from '../hooks/useCart';
 import AddressEditModal from '../modals/AddressEditModal';
@@ -44,8 +47,7 @@ type CustomerData = {
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
   const { customerInfo, loading, error, refreshCustomerInfo } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null, refreshCustomerInfo: () => void };
   const { cartItems, loading: cartLoading, error: cartError, removeItem, clearCart } = useCart();
-  const { jobs: availedJobs } = useCustomerJobs(customerInfo?.customer_id);
-
+  const { jobs: availedJobs, refreshJobs } = useCustomerJobs(customerInfo?.customer_id);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('availed-jobs');
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
@@ -141,23 +143,9 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Mobile Number</h2>
-              <button 
-                onClick={() => setIsContactModalOpen(true)}
-                className="px-6 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                EDIT
-              </button>
             </div>
-            <p className="text-sm text-gray-800 font-medium mb-2">{customer?.contact || 'N/A'}</p>
-            {customer?.contact ? (
-              <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                Verified
-              </span>
-            ) : (
-              <span className="inline-block px-3 py-1 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">
-                Add your number
-              </span>
-            )}
+            <p className="text-lg text-gray-800 font-bold mb-2">{customer?.contact || 'N/A'}</p>
+            
           </div>
         </div>
 
@@ -261,8 +249,38 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
     onDetailsClick: (job: any) => void;
   }
   const AvailedJobsView: FC<AvailedJobsViewProps> = ({ customerId, onDetailsClick }) => {
-    const { jobs, loading, error } = useCustomerJobs(customerId);
+    const { jobs, loading, error, refreshJobs } = useCustomerJobs(customerId);
+    const { cancelJob, isCancelling } = useCancelJob();
+    const [cancellingJobId, setCancellingJobId] = useState<number | null>(null);
 
+    const RefundConfirmation: React.FC<{ closeToast?: () => void; onConfirm: () => void }> = ({ closeToast, onConfirm }) => (
+      <div className="p-2">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="text-yellow-500 mt-1" size={24} />
+          <div>
+            <h3 className="font-bold text-gray-800">Are you sure?</h3>
+            <h5 className="text-sm text-gray-600 mt-1">
+              Do you want to cancel this job and request a refund? The Refund will be deducted 50 pesos for the payment transaction
+            </h5>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-4">
+          <button onClick={closeToast} className="px-4 py-1.5 bg-gray-200 text-gray-800 text-xs font-semibold rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => { onConfirm(); if (closeToast) closeToast(); }} className="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-md hover:bg-red-700">Proceed</button>
+        </div>
+      </div>
+    );
+
+    const handleRefund = (jobId: number) => {
+      const confirmRefund = async () => {
+        setCancellingJobId(jobId);
+        await cancelJob(jobId);
+        setCancellingJobId(null);
+        refreshJobs();
+      };
+
+      toast(<RefundConfirmation onConfirm={confirmRefund} />, { autoClose: false, closeOnClick: false });
+    };
     if (loading) {
       return (
         <div className="flex justify-center items-center p-10 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -288,6 +306,7 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         case 'in-progress': return `${baseClasses} bg-purple-100 text-purple-700`;
         case 'completed': return `${baseClasses} bg-green-100 text-green-700`;
         case 'claimed': return `${baseClasses} bg-green-200 text-green-800`;
+        case 'available_for_claim': return `${baseClasses} bg-cyan-100 text-cyan-700`;
         case 'cancelled': return `${baseClasses} bg-red-100 text-red-700`;
         default: return `${baseClasses} bg-gray-100 text-gray-700`;
       }
@@ -326,6 +345,16 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
                       Details
                     </button>
                   )}
+                  {job.status.toLowerCase() === 'available_for_claim' && (
+                    <button
+                      onClick={() => handleRefund(job.id)}
+                      disabled={isCancelling && cancellingJobId === job.id}
+                      className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors disabled:bg-red-300 flex items-center gap-2"
+                    >
+                      {(isCancelling && cancellingJobId === job.id) && <Loader2 size={16} className="animate-spin" />}
+                      Refund
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -343,6 +372,7 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
+      <ToastContainer position="top-center" theme="colored" />
       <AddressEditModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
@@ -358,6 +388,7 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         isOpen={isJobDetailsModalOpen}
         onClose={() => setIsJobDetailsModalOpen(false)}
         job={selectedJob}
+        onJobCompleted={refreshJobs}
       />
       <CheckoutModal
         isOpen={isCheckoutModalOpen}
@@ -374,7 +405,7 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-start justify-between">
               <div>
@@ -445,7 +476,6 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
           ))}
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'bookings' && (
           <CartView cartItems={cartItems} loading={cartLoading} error={cartError} removeItem={removeItem} clearCart={clearCart} onCheckout={() => setIsCheckoutModalOpen(true)} />
         )}
@@ -460,7 +490,6 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         )}
 
         {activeTab === 'profile' && <ProfileView customer={customer} />}
-
       </div>
     </div>
   );

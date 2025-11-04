@@ -2,18 +2,92 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from "next/navigation";
-import { JwtPayload } from "@/app/_shared/lib/jwt";
-import { Calendar, Clock, DollarSign, Star } from 'lucide-react';
-import CustomerManagement from './CustomerManagement';
-import TechnicianManagement from './TechnicianManagement';
+import { JwtPayload } from '@/app/_shared/lib/jwt';
+import { Calendar, Clock, DollarSign, Star, UserPlus, X, Loader2 } from 'lucide-react';
+import { http, axiosUtils } from '@/app/_shared/services/axiosClient';
 import BookingManagement from './BookingManagement';
-import ScheduleManagement from './ScheduleManagement';
-import ServiceManagement from './ServiceManagement';
 import ReportsAnalytics from './ReportsAnalytics';
-import SkillsManagement from './SkillsManagement';
+import ServiceAndSkillsManagement from './ServiceAndSkillsManagement';
+import UserManagement from './UserManagement';
+import RefundsManagement from './RefundsManagement';
 
 interface AdminDashboardClientProps {
   user: JwtPayload;
+}
+
+// A simple, reusable Modal component
+const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-100">
+            <X size={20} className="text-gray-600" />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+const AddUserModal = ({ isOpen, onClose, onUserAdded }: { isOpen: boolean, onClose: () => void, onUserAdded: () => void }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'technician',
+    phone: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await http.post('/admin/users', formData);
+      alert('User added successfully!');
+      onUserAdded();
+      onClose();
+    } catch (err) {
+      setError(axiosUtils.getErrorMessage(err));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Add New User">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input name="name" value={formData.name} onChange={handleChange} placeholder="Name" className="w-full p-2 border rounded" required />
+        <input name="email" type="email" value={formData.email} onChange={handleChange} placeholder="Email" className="w-full p-2 border rounded" required />
+        <input name="password" type="password" value={formData.password} onChange={handleChange} placeholder="Password" className="w-full p-2 border rounded" required />
+        <input name="phone" value={formData.phone} onChange={handleChange} placeholder="Phone" className="w-full p-2 border rounded" />
+        <select name="role" value={formData.role} onChange={handleChange} className="w-full p-2 border rounded">
+          <option value="technician">Technician</option>
+          <option value="customer">Customer</option>
+          <option value="admin">Admin</option>
+        </select>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+        <div className="flex justify-end gap-3 pt-4">
+          <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-lg">Cancel</button>
+          <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:bg-blue-300 flex items-center">
+            {isSubmitting && <Loader2 className="animate-spin mr-2" />}
+            Confirm
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
 }
 
 type TimeRange = 'Last 7 days' | 'Last 30 days' | 'Last 90 days';
@@ -35,6 +109,7 @@ interface Technician {
 export default function AdminDashboardClient({ user }: AdminDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [timeRange, setTimeRange] = useState<TimeRange>('Last 7 days');
+  const [isAddUserModalOpen, setAddUserModalOpen] = useState(false);
   const router = useRouter();
 
   const tabsContainerRef = useRef<HTMLDivElement>(null);
@@ -47,11 +122,9 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
   const tabs = [
     'Overview',
     'Bookings',
-    'Customers',
-    'Technicians',
-    'Services',
-    'Schedule',
-    'Skills',
+    'Users',
+    'Services & Skills',
+    'Refunds', // This was already here, which is great!
     'Reports',
   ];
 
@@ -109,6 +182,12 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setAddUserModalOpen(false)}
+        onUserAdded={() => { /* TODO: Implement data refresh */ }}
+      />
+
       {/* Welcome Header & Logout */}
       {/* Navigation Tabs */}
       <div
@@ -139,15 +218,23 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
           {/* Header */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Business Overview</h1>
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-              className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option>Last 7 days</option>
-              <option>Last 30 days</option>
-              <option>Last 90 days</option>
-            </select>
+            <div className="flex items-center gap-4">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+                className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option>Last 7 days</option>
+                <option>Last 30 days</option>
+                <option>Last 90 days</option>
+              </select>
+              <button
+                onClick={() => setAddUserModalOpen(true)}
+                className="w-full md:w-auto justify-center px-4 py-2 bg-yellow-400 text-gray-900 text-sm font-bold rounded-lg hover:bg-yellow-500 transition-colors flex items-center gap-2"
+              >
+                <UserPlus size={18} /> Add User
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -268,15 +355,10 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
 
       {activeTab === 'bookings' && <BookingManagement />}
 
-      {activeTab === 'customers' && <CustomerManagement />}
+      {activeTab === 'users' && <UserManagement />}
 
-      {activeTab === 'technicians' && <TechnicianManagement />}
-
-      {activeTab === 'services' && <ServiceManagement />}
-
-      {activeTab === 'schedule' && <ScheduleManagement />}
-
-      {activeTab === 'skills' && <SkillsManagement />}
+      {activeTab === 'services & skills' && <ServiceAndSkillsManagement />}
+      {activeTab === 'refunds' && <RefundsManagement />}
 
       {activeTab === 'reports' && <ReportsAnalytics />}
     </div>
