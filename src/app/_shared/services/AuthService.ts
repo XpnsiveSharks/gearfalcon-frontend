@@ -160,4 +160,30 @@ export const AuthService = {
     const { data } = await http.get("/debug/email-config");
     return data;
   },
+
+  async forgotPassword(email: string): Promise<any> {
+    const { data } = await http.post("/auth/forgot-password", { email });
+    return data;
+  },
+
+  async verifyPasswordReset(email: string, code: string): Promise<any> {
+    const { data } = await http.post("/auth/verify-password-reset", {
+      email,
+      code,
+    });
+    return data;
+  },
+
+  async resetPassword(
+    email: string,
+    code: string,
+    password: string
+  ): Promise<any> {
+    const { data } = await http.post("/auth/reset-password", {
+      email,
+      code,
+      password,
+    });
+    return data;
+  },
 };

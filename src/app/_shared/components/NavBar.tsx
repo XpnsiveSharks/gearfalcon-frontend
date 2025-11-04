@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/app/_shared/hooks/useAuth";
 import { useRouter } from "next/navigation";
+import logo from "@/imgs/logo.png";
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,8 +66,14 @@ const NavBar = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="text-lg font-semibold">
-              GearFalcon
+            <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
+              <Image
+                src={logo}
+                alt="GearFalcon Logo"
+                width={40}
+                height={40}
+              />
+              <span>GearFalcon</span>
             </Link>
           </div>
 

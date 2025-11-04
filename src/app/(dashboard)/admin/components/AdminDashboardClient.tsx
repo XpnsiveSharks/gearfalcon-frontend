@@ -124,7 +124,8 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
     'Bookings',
     'Users',
     'Services & Skills',
-    'Refunds', // This was already here, which is great!
+    'Refunds',
+    'Quotes',
     'Reports',
   ];
 
@@ -358,6 +359,7 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
       {activeTab === 'users' && <UserManagement />}
 
       {activeTab === 'services & skills' && <ServiceAndSkillsManagement />}
+      
       {activeTab === 'refunds' && <RefundsManagement />}
 
       {activeTab === 'reports' && <ReportsAnalytics />}

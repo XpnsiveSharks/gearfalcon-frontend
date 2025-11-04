@@ -515,7 +515,7 @@ const TechnicianDashboard: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-full shadow-sm mb-6 p-2 flex gap-2">
+      <div className="bg-white rounded-2xl md:rounded-full shadow-sm mb-6 p-2 flex flex-wrap md:flex-nowrap gap-2">
         {[
           { id: 'today', label: "Today's Jobs", badge: jobs.filter(j => j.isEmergency).length || null },
           { id: 'upcomingJob', label: 'Upcoming Jobs' },
@@ -526,7 +526,7 @@ const TechnicianDashboard: React.FC = () => {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-6 py-2 text-sm font-medium rounded-full transition-all relative ${
+            className={`flex-grow md:flex-1 px-4 sm:px-6 py-2 text-sm font-medium rounded-full transition-all relative ${
               activeTab === tab.id
                 ? 'bg-gray-100 text-gray-900'
                 : 'text-gray-600 hover:text-gray-900'

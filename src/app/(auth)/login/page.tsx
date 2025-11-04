@@ -99,7 +99,7 @@ const LoginPage = () => {
                   />
                   Remember me
                 </label>
-                <a href="#" className="text-sm text-slate-900 hover:underline">
+                <a href="/forgot-password" className="text-sm text-slate-900 hover:underline">
                   Forgot password?
                 </a>
               </div>

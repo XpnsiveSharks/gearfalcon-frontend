@@ -1,3 +1,7 @@
+import Image from "next/image";
+import logo from "@/imgs/logo.png";
+
+
 export default function Footer() {
   // SVG Icon Components
   const PhoneIcon = () => (
@@ -34,7 +38,14 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               {/* Logo placeholder - left blank as requested */}
-              <div className="w-12 h-12 bg-slate-700 rounded-lg"></div>
+              <div className="bg-white rounded-md p-1 flex items-center justify-center">
+                <Image
+                  src={logo}
+                  alt="GearFalcon Logo"
+                  width={32}
+                  height={32}
+                />
+              </div>
               <div>
                 <h3 className="text-xl font-bold text-yellow-400">GEARFALCON</h3>
                 <p className="text-sm text-gray-300">Electro-Mechanical Services</p>
