@@ -17,4 +17,9 @@ export const CustomerService = {
     const response = await http.post<CustomerProfile>("customers/complete-profile", data);
     return response.data;
   },
+
+  rateJob: async (jobId: string, rating: number): Promise<any> => {
+    const response = await http.put(`customers/jobs/${jobId}/rate`, { rating });
+    return response.data;
+  },
 };

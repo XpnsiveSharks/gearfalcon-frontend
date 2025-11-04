@@ -152,6 +152,18 @@ export function useCustomers() {
     }
   }, [isAuthenticated]);
 
+  const updateCustomerStatus = useCallback(async (customerId: number, newStatus: 'active' | 'inactive') => {
+    if (!isAuthenticated) {
+      throw new Error("User is not authenticated.");
+    }
+    try {
+      await http.put(`/admin/customers/${customerId}/status`, { status: newStatus });
+      fetchCustomers(); // Refetch customers to update the list
+    } catch (err) {
+      throw new Error(axiosUtils.getErrorMessage(err));
+    }
+  }, [isAuthenticated, fetchCustomers]);
+
   useEffect(() => {
     if (!isAuthLoading) {
       fetchCustomers();
@@ -167,5 +179,6 @@ export function useCustomers() {
     detailsError,
     fetchCustomers,
     fetchCustomerById,
+    updateCustomerStatus,
   };
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { AlertCircle, Calendar, Clock, Star, Phone, MessageSquare, Navigation, MapPin, User, Loader2, Award, Briefcase, Mail, Edit, BriefcaseBusiness, FileText, X } from 'lucide-react';
+import { AlertCircle, Calendar, Clock, Star, Phone, StarIcon, Navigation, MapPin, User, Loader2, Award, Briefcase, Mail, Edit, BriefcaseBusiness, FileText, X } from 'lucide-react';
 import { useTechnicianJobs, Job } from './hooks/useTechnicianJobs'; // Keep Job import
+import { useTechnicianReview } from './hooks/useTechnicianReview';
 import { useAvailableJobs} from './hooks/useAvailableJobs';
 
 // Moved to a separate file, but keeping imports here for other components on this page
@@ -427,10 +428,12 @@ const CompletedJobsView: React.FC = () => {
   );
 };
 
+
 const TechnicianDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('today');
   const { jobs, loading, error } = useTechnicianJobs();  
   const { completedJobs } = useTechnicianServiceHistory();
+  const { averageReview } = useTechnicianReview();
 
   const todaysJobs = useMemo(() => {
     const todayString = new Date().toLocaleDateString('en-CA'); // Gets date in 'YYYY-MM-DD' format
@@ -447,12 +450,12 @@ const TechnicianDashboard: React.FC = () => {
     const completedTodayCount = completedJobs.filter(job => new Date(job.completedDate).toLocaleDateString('en-CA') === todayString).length;
 
     return [
-      { label: 'Emergency Jobs', value: String(todaysJobs.length), subtext: 'Requires immediate attention!', icon: AlertCircle, color: 'red' },
       { label: "Today's Jobs", value: String(todaysJobs.length), subtext: `${completedTodayCount} completed`, icon: Calendar, color: 'blue' },
       { label: 'Upcoming Jobs', value: String(upcomingJobsCount), subtext: 'Scheduled ahead', icon: Clock, color: 'purple' },
-      { label: 'Total Completed', value: String(completedJobs.length), subtext: 'All-time completed jobs', icon: Award, color: 'green' }
-    ];
-  }, [jobs, todaysJobs, completedJobs]);
+      { label: 'Total Completed', value: String(completedJobs.length), subtext: 'All-time completed jobs', icon: Award, color: 'green' },
+      { label: 'Rating', value: averageReview !== null || averageReview === undefined ? String(averageReview) : 'N/A', subtext: 'Your Reviews! Keep Working', icon: StarIcon, color: 'yellow' }
+    ]; 
+  }, [jobs, todaysJobs, completedJobs, averageReview]);
   
   const getStatColor = (color: string) => {
     switch (color) {
