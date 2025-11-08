@@ -61,7 +61,7 @@ export default function HowItWorks() {
           />
           <Step
             index={2}
-            title="Site Visit & Quote"
+            title="Site Visit"
             description="Our expert technician visits your location to assess your needs and provide a detailed quote"
             variant="blue"
           />

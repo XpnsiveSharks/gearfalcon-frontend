@@ -36,7 +36,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<{ success
     }
 
     // Call backend auth service to refresh token
-    const backendURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const backendURL = process.env.NEXT_PUBLIC_API_URL;
     const backendResponse = await fetch(`${backendURL}/auth/refresh`, {
       method: 'POST',
       headers: {

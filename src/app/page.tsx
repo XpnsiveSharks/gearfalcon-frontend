@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/_shared/hooks/useAuth";
@@ -48,9 +48,10 @@ export default function Home() {
 
   // Show authenticated user home page with dashboard access
   return (
-    <main className="min-h-[calc(100vh-4rem)] pt-24 px-4">
+    <main className="min-h-[calc(100vh-4rem)] px-4">
+          <Hero />
       <div className="mx-auto max-w-4xl text-center">
-        <div className="mb-8">
+        <div className="mb-8 pt-24">
           <h1 className="text-3xl font-bold text-slate-900 mb-4">
             Welcome back, {user?.name || user?.email || 'User'}!
           </h1>
@@ -58,7 +59,6 @@ export default function Home() {
             Ready to continue? Access your personalized dashboard below.
           </p>
         </div>
-
         <div className="space-y-6">
           <Link
             href={getDashboardUrl()}
@@ -83,7 +83,7 @@ export default function Home() {
               <p className="text-sm text-slate-600">Manage your preferences</p>
             </div>
           </div>
-        <Services />
+          <Services />
         </div>
       </div>
     </main>

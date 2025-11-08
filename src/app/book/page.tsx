@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, Suspense } from "react";
 import { useAuth } from "@/app/_shared/hooks/useAuth";
 import { http } from "@/app/_shared/services/axiosClient";
 import { useServices } from "@/app/_shared/hooks/useServices";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, ShoppingCart } from "lucide-react";
 
 // Simple Modal Component
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode }) => {
@@ -28,10 +28,10 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
   );
 };
 
-export default function BookPage() {
+function BookForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const serviceCategoryName = searchParams.get("service");
+  const serviceCategoryName = searchParams?.get("service");
 
   const { user, isAuthenticated } = useAuth();
   const { services, categories, loading, error } = useServices();
@@ -139,7 +139,7 @@ export default function BookPage() {
 
   return (
     <div className="max-w-xl mx-auto py-20">
-      <h1 className="text-2xl font-bold mb-4">Book a Service</h1>
+      <h1 className="text-2xl font-bold mb-4">Book a Service</h1>      
       
       {currentCategory && (
         <div className="mb-6 bg-slate-50 border border-slate-200 rounded-lg p-4">
@@ -258,5 +258,20 @@ export default function BookPage() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-xl mx-auto py-20">
+        <div className="flex justify-center items-center p-8">
+          <Loader2 className="animate-spin text-slate-400" size={32} />
+          <p className="ml-4 text-slate-500">Loading booking form...</p>
+        </div>
+      </div>
+    }>
+      <BookForm />
+    </Suspense>
   );
 }

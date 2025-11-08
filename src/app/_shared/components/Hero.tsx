@@ -45,12 +45,12 @@ const Hero = () => {
               >
                 Book service now
               </Link>
-              <Link
+              {/* <Link
                 href="/quote"
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 px-6 py-3 text-slate-900 font-medium hover:bg-slate-100 transition-colors"
               >
                 Get free quote
-              </Link>
+              </Link> */}
             </div>
 
             {/* Stats */}

@@ -11,35 +11,40 @@ export const useCustomerInfo = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const router = useRouter();
 
+  const fetchCustomerInfo = async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      setError("User is not authenticated.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await CustomerService.getCustomerInfo();
+      setCustomerInfo(data);
+    } catch (err: unknown) {
+      if (err instanceof AxiosError && err.response?.status === 404) {
+        router.push("/customer/complete-profile");
+      } else {
+        setError("Failed to fetch customer information.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchCustomerInfo = async () => {
-      if (!isAuthenticated) {
-        setLoading(false);
-        setError("User is not authenticated.");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const data = await CustomerService.getCustomerInfo();
-        setCustomerInfo(data);
-      } catch (err: unknown) {
-        if (err instanceof AxiosError && err.response?.status === 404) {
-          router.push("/customer/complete-profile");
-        } else {
-          setError("Failed to fetch customer information.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (!isAuthLoading) {
       fetchCustomerInfo();
     }
-  }, [isAuthenticated, isAuthLoading, router]);
+  }, [isAuthenticated, isAuthLoading, router, refreshTrigger]);
 
-  return { customerInfo, loading, error };
+  const refreshCustomerInfo = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  return { customerInfo, loading, error, refreshCustomerInfo };
 };
