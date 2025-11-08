@@ -403,109 +403,182 @@ const ServiceAndSkillsManagement: React.FC = () => {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Service Categories Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[60vh] lg:h-[calc(100vh-20rem)]">
           <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Service Categories</h2>
           <div className="overflow-y-auto flex-1 pr-2">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
-                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {categoriesLoading ? (
-                  <tr><td colSpan={2} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
-                ) : categoriesError ? (
-                  <tr><td colSpan={2} className="p-6 text-center text-red-500">{categoriesError}</td></tr>
-                ) : filteredCategories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-gray-50">
-                    <td className="p-4">
+            {/* Table for medium and larger screens */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Category</th>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {categoriesLoading ? (
+                    <tr><td colSpan={2} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
+                  ) : categoriesError ? (
+                    <tr><td colSpan={2} className="p-6 text-center text-red-500">{categoriesError}</td></tr>
+                  ) : filteredCategories.map((cat) => (
+                    <tr key={cat.id} className="hover:bg-gray-50">
+                      <td className="p-4">
+                        <p className="font-medium break-words">{cat.name}</p>
+                        <p className="text-sm text-gray-500 break-words">{cat.description || 'No description'}</p>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setEditingCategory(cat); setCategoryModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                          <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Cards for small screens */}
+            <div className="md:hidden p-4 space-y-4">
+              {categoriesLoading ? (
+                <div className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></div>
+              ) : categoriesError ? (
+                <div className="p-6 text-center text-red-500">{categoriesError}</div>
+              ) : filteredCategories.map((cat) => (
+                <div key={cat.id} className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
                       <p className="font-medium break-words">{cat.name}</p>
                       <p className="text-sm text-gray-500 break-words">{cat.description || 'No description'}</p>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditingCategory(cat); setCategoryModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
-                        <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setEditingCategory(cat); setCategoryModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                      <button onClick={() => handleDeleteCategory(cat.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Service Management Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[60vh] lg:h-[calc(100vh-20rem)]">
           <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Services</h2>
           <div className="overflow-y-auto flex-1 pr-2">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
-                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
-                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {servicesLoading ? (
-                  <tr><td colSpan={4} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
-                ) : servicesError ? (
-                  <tr><td colSpan={4} className="p-6 text-center text-red-500">{servicesError}</td></tr>
-                ) : filteredServices.map((srv) => (
-                  <tr key={srv.id} className="hover:bg-gray-50">
-                    <td className="p-4">
+            {/* Table for medium and larger screens */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Price</th>
+                    <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {servicesLoading ? (
+                    <tr><td colSpan={4} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
+                  ) : servicesError ? (
+                    <tr><td colSpan={4} className="p-6 text-center text-red-500">{servicesError}</td></tr>
+                  ) : filteredServices.map((srv) => (
+                    <tr key={srv.id} className="hover:bg-gray-50">
+                      <td className="p-4">
+                        <p className="font-medium break-words">{srv.name}</p>
+                        <p className="text-sm text-gray-500 break-words">{categoryMap.get(srv.category_id) || 'Uncategorized'}</p>
+                      </td>
+                      <td className="p-4 font-medium">₱{srv.base_price ? parseFloat(srv.base_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setEditingService(srv); setServiceModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                          <button onClick={() => handleDeleteService(srv.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Cards for small screens */}
+            <div className="md:hidden p-4 space-y-4">
+              {servicesLoading ? (
+                <div className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></div>
+              ) : servicesError ? (
+                <div className="p-6 text-center text-red-500">{servicesError}</div>
+              ) : filteredServices.map((srv) => (
+                <div key={srv.id} className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
                       <p className="font-medium break-words">{srv.name}</p>
                       <p className="text-sm text-gray-500 break-words">{categoryMap.get(srv.category_id) || 'Uncategorized'}</p>
-                    </td>
-                    <td className="p-4 font-medium">₱{srv.base_price ? parseFloat(srv.base_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditingService(srv); setServiceModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
-                        <button onClick={() => handleDeleteService(srv.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setEditingService(srv); setServiceModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                      <button onClick={() => handleDeleteService(srv.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                    </div>
+                  </div>
+                  <p className="font-medium mt-2">₱{srv.base_price ? parseFloat(srv.base_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Skills Management Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-20rem)]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[60vh] lg:h-[calc(100vh-20rem)]">
             <h2 className="text-xl font-bold text-gray-800 p-6 border-b border-gray-100">Skills</h2>
             <div className="overflow-y-auto flex-1 pr-2">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Skill</th>
-                            <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {skillsLoading ? (
-                            <tr><td colSpan={2} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
-                        ) : skillsError ? (
-                            <tr><td colSpan={2} className="p-6 text-center text-red-500">{skillsError}</td></tr>
-                        ) : filteredSkills.map((skill) => (
-                            <tr key={skill.id} className="hover:bg-gray-50">
-                                <td className="p-4">
+                {/* Table for medium and larger screens */}
+                <div className="hidden md:block">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Skill</th>
+                                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {skillsLoading ? (
+                                <tr><td colSpan={2} className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></td></tr>
+                            ) : skillsError ? (
+                                <tr><td colSpan={2} className="p-6 text-center text-red-500">{skillsError}</td></tr>
+                            ) : filteredSkills.map((skill) => (
+                                <tr key={skill.id} className="hover:bg-gray-50">
+                                    <td className="p-4">
+                                        <p className="font-medium break-words">{skill.name}</p>
+                                        <p className="text-sm text-gray-500 break-words">{skill.description || 'No description'}</p>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => { setEditingSkill(skill); setSkillModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                                            <button onClick={() => handleDeleteSkill(skill.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {/* Cards for small screens */}
+                <div className="md:hidden p-4 space-y-4">
+                    {skillsLoading ? (
+                        <div className="p-6 text-center"><Loader2 className="animate-spin inline-block" /></div>
+                    ) : skillsError ? (
+                        <div className="p-6 text-center text-red-500">{skillsError}</div>
+                    ) : filteredSkills.map((skill) => (
+                        <div key={skill.id} className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex justify-between items-start">
+                                <div>
                                     <p className="font-medium break-words">{skill.name}</p>
                                     <p className="text-sm text-gray-500 break-words">{skill.description || 'No description'}</p>
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => { setEditingSkill(skill); setSkillModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
-                                        <button onClick={() => handleDeleteSkill(skill.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => { setEditingSkill(skill); setSkillModalOpen(true); }} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Edit size={18} /></button>
+                                    <button onClick={() => handleDeleteSkill(skill.id)} className="p-2 text-gray-600 rounded-lg hover:bg-gray-100"><Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
       </div>

@@ -395,37 +395,57 @@ const CompletedJobsView: React.FC = () => {
     );
   }
 
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Completed Jobs</h2>
       {completedJobs.length > 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer</th>
-                <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date Completed</th>
-                <th className="p-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Fee</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {completedJobs.map((job) => (
-                <tr key={job.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium text-gray-800">{job.service}</td>
-                  <td className="p-4 text-gray-600">{job.customerName}</td>
-                  <td className="p-4 text-gray-600">{job.completedDate}</td>
-                  <td className="p-4 text-right font-semibold text-gray-800">₱{job.serviceFee.toFixed(2)}</td>
+        <div>
+          {/* Table for medium and larger screens */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Service</th>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Customer</th>
+                  <th className="p-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date Completed</th>
+                  <th className="p-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Fee</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {completedJobs.map((job) => (
+                  <tr key={job.id} className="hover:bg-gray-50">
+                    <td className="p-4 font-medium text-gray-800">{job.service}</td>
+                    <td className="p-4 text-gray-600">{job.customerName}</td>
+                    <td className="p-4 text-gray-600">{job.completedDate}</td>
+                    <td className="p-4 text-right font-semibold text-gray-800">₱{job.serviceFee.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Cards for small screens */}
+          <div className="md:hidden space-y-4">
+            {completedJobs.map((job) => (
+              <div key={job.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-medium text-gray-800">{job.service}</p>
+                    <p className="text-sm text-gray-600">{job.customerName}</p>
+                  </div>
+                  <p className="text-right font-semibold text-gray-800">₱{job.serviceFee.toFixed(2)}</p>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">{job.completedDate}</p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100"><p className="text-gray-500">No completed jobs found.</p></div>
       )}
     </div>
   );
+
 };
 
 

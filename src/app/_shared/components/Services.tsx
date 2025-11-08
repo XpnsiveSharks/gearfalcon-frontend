@@ -88,6 +88,9 @@ export default function Services() {
 
   // Group services by category ID and get the first 4 service names for display
   const servicesByCategory = useMemo(() => {
+    if (!Array.isArray(categories)) {
+      return [];
+    }
     return categories.map(category => {
       const categoryServices = services
         .filter(service => service.category_id === category.id)

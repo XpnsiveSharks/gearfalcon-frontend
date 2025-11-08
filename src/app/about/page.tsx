@@ -4,10 +4,10 @@ import { Award, Target, Eye, Users } from 'lucide-react';
 const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl shadow-lg p-12 mb-8 text-white">
-          <h1 className="text-4xl font-bold mb-4">Gearfalcon Electro-Mechanical Services</h1>
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl shadow-lg p-6 sm:p-8 md:p-12 mb-8 text-white">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-4">Gearfalcon Electro-Mechanical Services</h1>
           <p className="text-xl text-blue-50 mb-2">Sole Proprietorship</p>
           <p className="text-lg text-blue-100">Excellence in HVAC, Electrical & Fire Protection Services Since 2005</p>
         </div>
@@ -24,7 +24,7 @@ const AboutPage: React.FC = () => {
         </div>
 
         {/* Mission & Vision */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-blue-50 rounded-xl">
@@ -76,7 +76,7 @@ const AboutPage: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900">Our Services</h2>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               'Air Conditioning Installation',
               'HVAC Maintenance & Repair',
@@ -103,7 +103,7 @@ const AboutPage: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900">Leadership Team</h2>
           </div>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full mx-auto mb-3 flex items-center justify-center">
                 <span className="text-white text-2xl font-bold">AM</span>
