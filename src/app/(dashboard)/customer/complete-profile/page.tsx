@@ -20,7 +20,34 @@ const CompleteProfilePage = () => {
       postal_code: "",
     },
   });
+  const [errors, setErrors] = useState<any>({});
   const [error, setError] = useState<string | null>(null);
+
+  const validate = () => {
+    const newErrors: any = { address: {} };
+    if (!formData.company_name)
+      newErrors.company_name = "Company name is required";
+    if (!formData.contact) {
+      newErrors.contact = "Contact number is required";
+    } else if (!/^\d{11}$/.test(formData.contact)) {
+      newErrors.contact = "Contact number must be 11 digits";
+    }
+    if (!formData.address.house_number)
+      newErrors.address.house_number = "House number is required";
+    if (!formData.address.street)
+      newErrors.address.street = "Street is required";
+    if (!formData.address.barangay)
+      newErrors.address.barangay = "Barangay is required";
+    if (!formData.address.city) newErrors.address.city = "City is required";
+    if (!formData.address.province)
+      newErrors.address.province = "Province is required";
+    if (!formData.address.region)
+      newErrors.address.region = "Region is required";
+    if (!formData.address.postal_code)
+      newErrors.address.postal_code = "Postal code is required";
+
+    return newErrors;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,6 +71,14 @@ const CompleteProfilePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const newErrors = validate();
+    if (
+      Object.keys(newErrors).length > 1 ||
+      Object.keys(newErrors.address).length > 0
+    ) {
+      setErrors(newErrors);
+      return;
+    }
 
     try {
       await CustomerService.completeProfile(formData);
@@ -74,8 +109,12 @@ const CompleteProfilePage = () => {
               value={formData.company_name}
               onChange={handleChange}
               className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
             />
+            {errors.company_name && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.company_name}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -91,8 +130,10 @@ const CompleteProfilePage = () => {
               value={formData.contact}
               onChange={handleChange}
               className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
             />
+            {errors.contact && (
+              <p className="mt-2 text-sm text-red-600">{errors.contact}</p>
+            )}
           </div>
           <div className="p-4 border border-gray-200 rounded-md">
             <h3 className="mb-4 text-lg font-medium text-gray-800">Address</h3>
@@ -111,8 +152,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.house_number}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.house_number && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.house_number}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -128,8 +173,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.street}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.street && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.street}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -145,8 +194,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.barangay}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.barangay && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.barangay}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -162,8 +215,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.city}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.city && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.city}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -179,8 +236,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.province}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.province && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.province}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -196,8 +257,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.region}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.region && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.region}
+                  </p>
+                )}
               </div>
               <div>
                 <label
@@ -213,8 +278,12 @@ const CompleteProfilePage = () => {
                   value={formData.address.postal_code}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 mt-1 text-gray-900 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  required
                 />
+                {errors.address?.postal_code && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.address.postal_code}
+                  </p>
+                )}
               </div>
             </div>
           </div>

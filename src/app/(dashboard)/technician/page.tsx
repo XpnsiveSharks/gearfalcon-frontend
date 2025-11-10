@@ -307,7 +307,7 @@ const UpcomingJobsView: React.FC<{ jobs: Job[], loading: boolean, error: string 
   );
 };
 
-const JobBoardView: React.FC<{ onJobClaimed: () => void }> = ({ onJobClaimed }) => {
+const JobBoardView: React.FC<{ onJobClaimed: () => void, jobs: Job[] }> = ({ onJobClaimed, jobs }) => {
   const { availableJobs, loading, error, claimJob } = useAvailableJobs();
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
@@ -339,6 +339,19 @@ const JobBoardView: React.FC<{ onJobClaimed: () => void }> = ({ onJobClaimed }) 
       <div className="text-center py-16 bg-red-50 text-red-700 rounded-2xl shadow-sm border border-red-200">
         <p className="font-semibold">Error</p>
         <p>{error}</p>
+      </div>
+    );
+  }
+
+  const currentJobsCount = jobs.filter(job => job.status !== 'completed').length;
+
+  if (currentJobsCount >= 5) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Job Board</h2>
+        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <p className="text-red-500 font-semibold text-lg">Please complete your current jobs first.</p>
+        </div>
       </div>
     );
   }
@@ -376,6 +389,13 @@ const JobBoardView: React.FC<{ onJobClaimed: () => void }> = ({ onJobClaimed }) 
 
 const CompletedJobsView: React.FC = () => {
   const { completedJobs, loading, error } = useTechnicianServiceHistory();
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 10;
+
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = completedJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(completedJobs.length / jobsPerPage);
 
   if (loading) {
     return (
@@ -413,7 +433,7 @@ const CompletedJobsView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {completedJobs.map((job) => (
+                {currentJobs.map((job) => (
                   <tr key={job.id} className="hover:bg-gray-50">
                     <td className="p-4 font-medium text-gray-800">{job.service}</td>
                     <td className="p-4 text-gray-600">{job.customerName}</td>
@@ -426,7 +446,7 @@ const CompletedJobsView: React.FC = () => {
           </div>
           {/* Cards for small screens */}
           <div className="md:hidden space-y-4">
-            {completedJobs.map((job) => (
+            {currentJobs.map((job) => (
               <div key={job.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
                 <div className="flex justify-between items-start">
                   <div>
@@ -439,6 +459,27 @@ const CompletedJobsView: React.FC = () => {
               </div>
             ))}
           </div>
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100"><p className="text-gray-500">No completed jobs found.</p></div>
@@ -473,7 +514,7 @@ const TechnicianDashboard: React.FC = () => {
       { label: "Today's Jobs", value: String(todaysJobs.length), subtext: `${completedTodayCount} completed`, icon: Calendar, color: 'blue' },
       { label: 'Upcoming Jobs', value: String(upcomingJobsCount), subtext: 'Scheduled ahead', icon: Clock, color: 'purple' },
       { label: 'Total Completed', value: String(completedJobs.length), subtext: 'All-time completed jobs', icon: Award, color: 'green' },
-      { label: 'Rating', value: averageReview !== null || averageReview === undefined ? String(averageReview) : 'N/A', subtext: 'Your Reviews! Keep Working', icon: StarIcon, color: 'yellow' }
+      { label: 'Rating', value: averageReview !== null && averageReview !== undefined ? averageReview.toFixed(1) : 'N/A', subtext: 'Your Reviews! Keep Working', icon: StarIcon, color: 'yellow' }
     ]; 
   }, [jobs, todaysJobs, completedJobs, averageReview]);
   
@@ -570,7 +611,7 @@ const TechnicianDashboard: React.FC = () => {
           return <ProfileView />;
         }
         if (activeTab === 'JobBoard') {
-          return <JobBoardView onJobClaimed={() => { /* Optionally refetch assigned jobs */ }} />;
+          return <JobBoardView onJobClaimed={() => { /* Optionally refetch assigned jobs */ }} jobs={jobs} />;
         }
         if (activeTab === 'upcomingJob') {
           return <UpcomingJobsView jobs={jobs} loading={loading} error={error} />;

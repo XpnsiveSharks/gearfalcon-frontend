@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import { JwtPayload } from '@/app/_shared/lib/jwt';
-import { Calendar, Clock, DollarSign, Star, UserPlus, X, Loader2 } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Star, UserPlus, X, Loader2, Eye, EyeOff } from 'lucide-react';
 import { http, axiosUtils } from '@/app/_shared/services/axiosClient';
 import BookingManagement from './BookingManagement';
 import ReportsAnalytics from './ReportsAnalytics';
@@ -167,6 +167,7 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [timeRange, setTimeRange] = useState<TimeRange>('Last 7 days');
   const [isAddUserModalOpen, setAddUserModalOpen] = useState(false);
+  const [showRevenue, setShowRevenue] = useState(false);
   const router = useRouter();
 
   const tabsContainerRef = useRef<HTMLDivElement>(null);
@@ -342,11 +343,18 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
                   ) : error ? (
                     <h3 className="text-3xl md:text-4xl font-bold text-red-500">Error</h3>
                   ) : (
-                    <h3 className="text-3xl md:text-4xl font-bold text-gray-900">₱{totalRevenue.toLocaleString()}</h3>
+                    <h3 className="text-3xl md:text-4xl font-bold text-gray-900">
+                      {showRevenue ? `₱${totalRevenue.toLocaleString()}` : '********'}
+                    </h3>
                   )}
                 </div>
-                <div className="p-3 bg-green-50 rounded-xl">
-                  <DollarSign className="text-green-500" size={24} />
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowRevenue(!showRevenue)} className="p-2 rounded-full hover:bg-gray-100">
+                    {showRevenue ? <EyeOff size={24} className="text-gray-500" /> : <Eye size={24} className="text-gray-500" />}
+                  </button>
+                  <div className="p-3 bg-green-50 rounded-xl">
+                    <DollarSign className="text-green-500" size={24} />
+                  </div>
                 </div>
               </div>
               {loading ? (
@@ -404,7 +412,7 @@ export default function AdminDashboardClient({ user }: AdminDashboardClientProps
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
                         {job.status}
                       </span>
-                      <p className="text-sm font-semibold text-gray-900 w-16 text-right">₱{job.service.base_price}</p>
+                      <p className="text-sm font-semibold text-gray-900 w-16 text-right">₱{job.price}</p>
                     </div>
                   </div>
                 ))

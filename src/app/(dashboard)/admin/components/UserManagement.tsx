@@ -222,10 +222,35 @@ const CustomerManagementInternal: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const customers = useMemo(() => {
     return users.filter(user => user.role === 'customer');
   }, [users]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm) {
+      return customers;
+    }
+    return customers.filter(customer =>
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [customers, searchTerm]);
+
+  const paginatedCustomers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredCustomers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const getStatusColor = (status: 'active' | 'inactive' | string) => {
     switch (status) {
@@ -253,8 +278,18 @@ const CustomerManagementInternal: React.FC = () => {
 
   return (
     <div className="bg-gray-50">
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type="text"
+          placeholder="Search customers by name or email..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
       {/* Table Container */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-22rem)]">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-26rem)]">
         {/* Table */}
         <div className="overflow-y-auto flex-1">
           <table className="w-full responsive-table">
@@ -282,8 +317,8 @@ const CustomerManagementInternal: React.FC = () => {
                     {error}
                   </td>
                 </tr>
-              ) : customers.length > 0 ? (
-                customers.map((customer) => (
+              ) : paginatedCustomers.length > 0 ? (
+                paginatedCustomers.map((customer) => (
                 <tr key={customer.id} className="block lg:table-row mb-4 lg:mb-0 border lg:border-0 rounded-lg lg:rounded-none hover:bg-gray-50 transition-colors">
                   <td className="p-4 block lg:table-cell" data-label="Customer">
                     <div>
@@ -311,13 +346,41 @@ const CustomerManagementInternal: React.FC = () => {
               ))
               ) : (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>No customers found.</td>
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>
+                    {searchTerm ? 'No customers match your search.' : 'No customers found.'}
+                  </td>
                 </tr>
               )
             }
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Showing {paginatedCustomers.length} of {filteredCustomers.length} customers
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* View Customer Modal */}
@@ -556,6 +619,31 @@ const TechnicianManagementInternal: React.FC = () => {
   const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredTechnicians = useMemo(() => {
+    if (!searchTerm) {
+      return technicians;
+    }
+    return technicians.filter(tech =>
+      tech.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tech.email && tech.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [technicians, searchTerm]);
+
+  const paginatedTechnicians = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredTechnicians.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredTechnicians, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredTechnicians.length / itemsPerPage);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const getStatusColor = (status: 'available' | 'offline' | 'busy') => {
     switch (status) {
@@ -615,7 +703,17 @@ const TechnicianManagementInternal: React.FC = () => {
           fetchTechnicians();
         }}
       />
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-22rem)]">
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type="text"
+          placeholder="Search technicians by name or email..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-26rem)]">
         {/* Table */}
         <div className="overflow-y-auto flex-1">
           <table className="w-full responsive-table">
@@ -646,8 +744,8 @@ const TechnicianManagementInternal: React.FC = () => {
                     {error}
                   </td>
                 </tr>
-              ) : technicians.length > 0 ? (
-                technicians.map((tech) => (
+              ) : paginatedTechnicians.length > 0 ? (
+                paginatedTechnicians.map((tech) => (
                 <tr key={tech.id} className="block lg:table-row mb-4 lg:mb-0 border lg:border-0 rounded-lg lg:rounded-none hover:bg-gray-50 transition-colors">
                   <td className="p-4 block lg:table-cell" data-label="Technician">
                     <div>
@@ -693,13 +791,41 @@ const TechnicianManagementInternal: React.FC = () => {
               ))
               ) : (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={7}>No technicians found.</td>
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={7}>
+                    {searchTerm ? 'No technicians match your search.' : 'No technicians found.'}
+                  </td>
                 </tr>
               )
             }
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Showing {paginatedTechnicians.length} of {filteredTechnicians.length} technicians
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

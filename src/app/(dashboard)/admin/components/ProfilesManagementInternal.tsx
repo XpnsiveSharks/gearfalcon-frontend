@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Loader2, Edit, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Loader2, Edit, Trash2, X, Search } from 'lucide-react';
 import { useUsers } from './Hooks/useUsers';
 import { http, axiosUtils } from '@/app/_shared/services/axiosClient';
 
@@ -96,6 +96,32 @@ const ProfilesManagementInternal: React.FC = () => {
   const { users, loading, error, fetchUsers } = useUsers();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) {
+      return users;
+    }
+    return users.filter(user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   const getStatusColor = (status: 'active' | 'inactive') => {
     switch (status) {
@@ -145,7 +171,17 @@ const ProfilesManagementInternal: React.FC = () => {
 
   return (
     <div className="bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-22rem)]">
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input
+          type="text"
+          placeholder="Search by name, email, or role..."
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-26rem)]">
         <div className="overflow-y-auto flex-1">
           <table className="w-full responsive-table">
             <thead className="bg-gray-50 border-b border-gray-100 hidden lg:table-header-group">
@@ -160,7 +196,7 @@ const ProfilesManagementInternal: React.FC = () => {
             <tbody className="divide-y divide-gray-100 lg:divide-y-0">
               {loading ? (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={5}>
                     <div className="flex justify-center items-center gap-2">
                       <Loader2 className="animate-spin" size={20} />
                       <span>Loading users...</span>
@@ -169,12 +205,12 @@ const ProfilesManagementInternal: React.FC = () => {
                 </tr>
               ) : error ? (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-red-500" colSpan={4}>
+                  <td className="p-4 lg:p-6 text-center text-red-500" colSpan={5}>
                     {error}
                   </td>
                 </tr>
-              ) : users.length > 0 ? (
-                users.map((user) => (
+              ) : paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
                 <tr key={user.id} className="block lg:table-row mb-4 lg:mb-0 border lg:border-0 rounded-lg lg:rounded-none hover:bg-gray-50 transition-colors">
                   <td className="p-4 block lg:table-cell" data-label="Name">
                     <div>
@@ -205,13 +241,41 @@ const ProfilesManagementInternal: React.FC = () => {
               ))
               ) : (
                 <tr className="block lg:table-row">
-                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={4}>No users found.</td>
+                  <td className="p-4 lg:p-6 text-center text-gray-500" colSpan={5}>
+                    {searchTerm ? 'No users match your search.' : 'No users found.'}
+                  </td>
                 </tr>
               )
             }
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Showing {paginatedUsers.length} of {filteredUsers.length} users
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <span className="text-sm text-gray-600">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       <EditUserModal
         isOpen={isEditModalOpen}

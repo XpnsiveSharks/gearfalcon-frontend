@@ -92,5 +92,18 @@ export const useCart = () => {
     }
   };
 
-  return { cartItems, loading, error, removeItem, clearCart };
+  const updateItem = async (itemId: number, quantity: number, notes: string): Promise<boolean> => {
+    try {
+      await http.put(`/customers/cart/items/${itemId}`, { quantity, notes });
+      toast.success('Cart item updated successfully!');
+      setRefreshTrigger(prev => prev + 1);
+      return true;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to update cart item.';
+      toast.error(errorMessage);
+      return false;
+    }
+  };
+
+  return { cartItems, loading, error, removeItem, clearCart, updateItem };
 };

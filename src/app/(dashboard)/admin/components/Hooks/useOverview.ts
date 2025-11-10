@@ -74,6 +74,7 @@ export interface RecentJob {
   service: Service;
   customer_address: CustomerAddress;
   assignments: Assignment[];
+  price: number;
 }
 
 interface OverviewData {

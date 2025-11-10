@@ -16,6 +16,7 @@ import AddressEditModal from '../modals/AddressEditModal';
 import EmailEditModal from '../modals/EmailEditModal';
 import CheckoutModal from '../modals/CheckoutModal';
 import JobDetailsModal from '../modals/JobDetailsModal';
+import EditCartItemModal from '../modals/EditCartItemModal';
 
 
 interface CustomerDashboardClientProps {
@@ -46,16 +47,28 @@ type CustomerData = {
 
 export default function CustomerDashboardClient({ user }: CustomerDashboardClientProps) {
   const { customerInfo, loading, error, refreshCustomerInfo } = useCustomerInfo() as { customerInfo: any, loading: boolean, error: string | null, refreshCustomerInfo: () => void };
-  const { cartItems, loading: cartLoading, error: cartError, removeItem, clearCart } = useCart();
+  const { cartItems, loading: cartLoading, error: cartError, removeItem, clearCart, updateItem } = useCart();
   const { jobs: availedJobs, refreshJobs } = useCustomerJobs(customerInfo?.customer_id);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('availed-jobs');
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isJobDetailsModalOpen, setIsJobDetailsModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
+  const [isEditCartItemModalOpen, setIsEditCartItemModalOpen] = useState(false);
+  const [selectedCartItem, setSelectedCartItem] = useState<any | null>(null);
+
+  const handleEditCartItem = (item: any) => {
+    setSelectedCartItem(item);
+    setIsEditCartItemModalOpen(true);
+  };
+
+  const handleSaveCartItem = async (itemId: number, quantity: number, notes: string) => {
+    await updateItem(itemId, quantity, notes);
+    setIsEditCartItemModalOpen(false);
+    setSelectedCartItem(null);
+  };
 
   const handleAddressUpdateSuccess = useCallback(() => {
     refreshCustomerInfo();
@@ -252,6 +265,36 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
     const { jobs, loading, error, refreshJobs } = useCustomerJobs(customerId);
     const { cancelJob, isCancelling } = useCancelJob();
     const [cancellingJobId, setCancellingJobId] = useState<number | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const jobsPerPage = 10;
+
+    const sortedJobs = useMemo(() => {
+      if (!jobs) return [];
+      const statusOrder: { [key: string]: number } = {
+        'claimed': 1,
+        'available_for_claim': 2,
+        'pending': 3,
+        'confirmed': 4,
+        'in-progress': 5,
+        'completed': 6,
+        'cancelled': 7,
+      };
+      return [...jobs].sort((a, b) => {
+        const statusA = a.status.toLowerCase();
+        const statusB = b.status.toLowerCase();
+        const orderA = statusOrder[statusA] || 100;
+        const orderB = statusOrder[statusB] || 100;
+        if (orderA !== orderB) {
+          return orderA - orderB;
+        }
+        return new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime();
+      });
+    }, [jobs]);
+
+    const indexOfLastJob = currentPage * jobsPerPage;
+    const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+    const currentJobs = sortedJobs.slice(indexOfFirstJob, indexOfLastJob);
+    const totalPages = Math.ceil(sortedJobs.length / jobsPerPage);
 
     const RefundConfirmation: React.FC<{ closeToast?: () => void; onConfirm: () => void }> = ({ closeToast, onConfirm }) => (
       <div className="p-2">
@@ -316,49 +359,74 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900">Availed Jobs</h2>
         {jobs && jobs.length > 0 ? (
-          <div className="space-y-4">
-            {jobs.map((job: any) => (
-              <div key={job.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-grow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-gray-100 rounded-lg">
-                      <Wrench size={20} className="text-gray-600" />
+          <>
+            <div className="space-y-4">
+              {currentJobs.map((job: any) => (
+                <div key={job.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-grow">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-gray-100 rounded-lg">
+                        <Wrench size={20} className="text-gray-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{job.service?.name || `Job ID: ${job.id}`}</h3>
+                        <p className="text-sm text-gray-500">Scheduled: {new Date(job.scheduled_date).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{job.service?.name || `Job ID: ${job.id}`}</h3>
-                      <p className="text-sm text-gray-500">Scheduled: {new Date(job.scheduled_date).toLocaleDateString()}</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
+                      <span className={getStatusChip(job.status)}>
+                        {job.status.toLowerCase() === 'available_for_claim' ? 'Waiting for technician' : job.status}
+                      </span>
+                      {job.technician && (
+                        <p>Technician: <span className="font-medium text-gray-800">{job.technician.user.name}</span></p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
-                    <span className={getStatusChip(job.status)}>{job.status}</span>
-                    {job.technician && (
-                      <p>Technician: <span className="font-medium text-gray-800">{job.technician.user.name}</span></p>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    {job.status.toLowerCase() === 'claimed' && (
+                      <button
+                        onClick={() => onDetailsClick(job)}
+                        className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        Details
+                      </button>
+                    )}
+                    {job.status.toLowerCase() === 'available_for_claim' && (
+                      <button
+                        onClick={() => handleRefund(job.id)}
+                        disabled={isCancelling && cancellingJobId === job.id}
+                        className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors disabled:bg-red-300 flex items-center gap-2"
+                      >
+                        {(isCancelling && cancellingJobId === job.id) && <Loader2 size={16} className="animate-spin" />}
+                        Refund
+                      </button>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  {job.status.toLowerCase() === 'claimed' && (
-                    <button
-                      onClick={() => onDetailsClick(job)}
-                      className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      Details
-                    </button>
-                  )}
-                  {job.status.toLowerCase() === 'available_for_claim' && (
-                    <button
-                      onClick={() => handleRefund(job.id)}
-                      disabled={isCancelling && cancellingJobId === job.id}
-                      className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors disabled:bg-red-300 flex items-center gap-2"
-                    >
-                      {(isCancelling && cancellingJobId === job.id) && <Loader2 size={16} className="animate-spin" />}
-                      Refund
-                    </button>
-                  )}
-                </div>
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center mt-4">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                >
+                  Next
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <div className="text-center text-gray-500 bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
             <Package size={48} className="mx-auto text-gray-400 mb-4" />
@@ -395,6 +463,12 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         onClose={() => setIsCheckoutModalOpen(false)}
         customer={customer}
         totalAmount={totalPendingPayment}
+      />
+      <EditCartItemModal
+        isOpen={isEditCartItemModalOpen}
+        onClose={() => setIsEditCartItemModalOpen(false)}
+        item={selectedCartItem}
+        onSave={handleSaveCartItem}
       />
       {/* Main Content */}
       <div className="flex-1 overflow-auto p-8">
@@ -458,7 +532,7 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         {/* Tabs */}
         <div className="bg-white rounded-full shadow-sm mb-6 p-2 flex gap-2">
           {[
-            { id: 'bookings', label: 'My Bookings' },
+            { id: 'bookings', label: 'Services' },
             { id: 'availed-jobs', label: 'Availed Jobs' },
             { id: 'profile', label: 'Profile' },
           ].map((tab) => (
@@ -477,7 +551,15 @@ export default function CustomerDashboardClient({ user }: CustomerDashboardClien
         </div>
 
         {activeTab === 'bookings' && (
-          <CartView cartItems={cartItems} loading={cartLoading} error={cartError} removeItem={removeItem} clearCart={clearCart} onCheckout={() => setIsCheckoutModalOpen(true)} />
+          <CartView 
+            cartItems={cartItems} 
+            loading={cartLoading} 
+            error={cartError} 
+            removeItem={removeItem} 
+            clearCart={clearCart} 
+            onCheckout={() => setIsCheckoutModalOpen(true)}
+            onEditItem={handleEditCartItem}
+          />
         )}
 
         {activeTab === 'availed-jobs' && (
@@ -502,9 +584,10 @@ interface CartViewProps {
   removeItem: (itemId: number) => Promise<boolean>;
   clearCart: () => Promise<boolean>;
   onCheckout: () => void;
+  onEditItem: (item: any) => void;
 }
 
-const CartView: React.FC<CartViewProps> = ({ cartItems, loading, error, removeItem, clearCart, onCheckout }) => {
+const CartView: React.FC<CartViewProps> = ({ cartItems, loading, error, removeItem, clearCart, onCheckout, onEditItem }) => {
   const router = useRouter();
   const [deletingItemId, setDeletingItemId] = useState<number | null>(null);
   const [isClearing, setIsClearing] = useState(false);
@@ -567,6 +650,12 @@ const CartView: React.FC<CartViewProps> = ({ cartItems, loading, error, removeIt
                   {item.notes && <p className="text-xs text-gray-500 italic mt-1">Notes: &quot;{item.notes}&quot;</p>}
                 </div>
                 <div className="flex items-center gap-2 self-end sm:self-center">
+                  <button
+                    onClick={() => onEditItem(item)}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors flex items-center"
+                  >
+                    Edit
+                  </button>
                   <button 
                     onClick={() => handleDelete(item.id)}
                     disabled={deletingItemId === item.id}
@@ -590,7 +679,7 @@ const CartView: React.FC<CartViewProps> = ({ cartItems, loading, error, removeIt
             <button 
                 onClick={onCheckout}
                 className="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
-            >Proceed to Checkout</button>
+            >Proceed</button>
         </div>
       )}
     </div>
